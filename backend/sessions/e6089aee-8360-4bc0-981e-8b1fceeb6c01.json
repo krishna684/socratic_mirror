@@ -1,0 +1,144 @@
+{
+  "session_id": "e6089aee-8360-4bc0-981e-8b1fceeb6c01",
+  "user_id": "user_ci6sb2dpj",
+  "mode": "public_speaking",
+  "start_time": "2026-03-16T17:50:25.337253",
+  "end_time": "2026-03-16T17:51:22.996578",
+  "context_history": [],
+  "biometric_timeline": [
+    {
+      "heart_rate": 41,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 61.02141216049235,
+      "timestamp": "2026-03-16T17:51:14.970752"
+    },
+    {
+      "heart_rate": 41,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 60,
+      "confidence_level": 61.09749826898117,
+      "timestamp": "2026-03-16T17:51:16.023351"
+    },
+    {
+      "heart_rate": 47,
+      "stress_level": "medium",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 61.1233446976878,
+      "timestamp": "2026-03-16T17:51:17.060059"
+    },
+    {
+      "heart_rate": 49,
+      "stress_level": "medium",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 60.952583452952496,
+      "timestamp": "2026-03-16T17:51:18.066199"
+    },
+    {
+      "heart_rate": 47,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 60.847604761477335,
+      "timestamp": "2026-03-16T17:51:19.082455"
+    },
+    {
+      "heart_rate": 43,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 60,
+      "confidence_level": 60.7385124195454,
+      "timestamp": "2026-03-16T17:51:20.110732"
+    },
+    {
+      "heart_rate": 42,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 60.71509652526403,
+      "timestamp": "2026-03-16T17:51:21.172256"
+    },
+    {
+      "heart_rate": 42,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 60.73273921293145,
+      "timestamp": "2026-03-16T17:51:22.180972"
+    }
+  ],
+  "interactions": [],
+  "biometric_baseline": null,
+  "barge_in_sensitivity": 0.7,
+  "persona": null,
+  "duration": 57.659325,
+  "tutoring_step": 0,
+  "interview_state": {
+    "stage": "init",
+    "role": "",
+    "job_description": "",
+    "resume": "",
+    "started": false,
+    "start_time": null,
+    "question_count": 0,
+    "max_questions": 10,
+    "min_questions": 6,
+    "target_minutes": 10,
+    "max_minutes": 15,
+    "current_question": "",
+    "current_section": "",
+    "hint_used": false,
+    "last_question_time": null
+  },
+  "public_speaking_state": {
+    "stage": "ready",
+    "speaking_type": "Storytelling",
+    "topic": "business",
+    "script": "",
+    "started": false,
+    "start_time": null,
+    "main_speech_start": null,
+    "followup_index": 0,
+    "followup_total": 3,
+    "word_count": 0,
+    "filler_count": 0,
+    "pause_count": 0,
+    "long_pause_count": 0
+  }
+}

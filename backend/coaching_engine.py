@@ -10,6 +10,7 @@ from datetime import datetime
 
 from gemini_client import GeminiClient
 from session_manager import SessionManager
+from tutor_agent import TutorAgentDecisionEngine, TutorPersonalityLayer
 
 
 class CoachingEngine:
@@ -19,6 +20,8 @@ class CoachingEngine:
         self.gemini = gemini_client
         self.session_manager = session_manager
         self.barge_in_detector = BargeInDetector()
+        self.decision_engine = TutorAgentDecisionEngine()
+        self.personality = TutorPersonalityLayer()
 
     def _normalize_avatar_payload(self, payload: Dict[str, Any]) -> Dict[str, str]:
         raw = payload.get("avatar_intent") or payload.get("avatar_state") or {}
@@ -120,6 +123,13 @@ class CoachingEngine:
         if mode == "tutoring":
             session_meta["current_step"] = int(session.get("tutoring_step", 0))
 
+        # Enrich session_meta with agentic student state signals
+        if mode == "tutoring":
+            self.decision_engine.update_from_student(session_id, text)
+            session_meta = self.personality.inject_meta(
+                session_meta, self.decision_engine.get_or_create(session_id)
+            )
+
         response_data = await self.gemini.generate_structured_response(
             messages,
             mode,
@@ -188,6 +198,8 @@ class CoachingEngine:
                     "timestamp": datetime.now().isoformat(),
                 },
             )
+            if mode == "tutoring":
+                self.decision_engine.update_from_response(session_id, response_data)
             return response_data
 
         if isinstance(response_data, dict) and response_data.get("type") == "error":

@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { CoachingMode, BiometricData } from '@/types';
 import BiometricMonitor from './BiometricMonitor';
-import AvatarScene from './AvatarScene';
+import dynamic from 'next/dynamic';
+const AvatarScene = dynamic(() => import('./AvatarScene'), { ssr: false });
 import AudioProcessor from './AudioProcessor';
 import SessionControls from './SessionControls';
 import VibeReport from './VibeReport';
+import LiveCoachingInterface from './LiveCoachingInterface';
 
 export default function CoachingInterface() {
     const [sessionId, setSessionId] = useState<string | null>(null);
@@ -25,6 +27,7 @@ export default function CoachingInterface() {
     const [showReport, setShowReport] = useState(false);
     const [ws, setWs] = useState<WebSocket | null>(null);
     const [isConnecting, setIsConnecting] = useState(false);
+    const [useLiveMode, setUseLiveMode] = useState(false);
 
     // Initialize WebSocket connection
     useEffect(() => {
@@ -335,10 +338,40 @@ export default function CoachingInterface() {
                     </div>
 
                     {/* Controls - Sidebar */}
-                    <div className="lg:col-span-5 space-y-6 h-full overflow-y-auto custom-scrollbar">
-                        <BiometricMonitor onBiometricUpdate={handleBiometricUpdate} />
-                        <AudioProcessor onAudioEvent={handleAudioEvent} />
-                        <SessionControls mode={mode} />
+                    <div className="lg:col-span-5 space-y-4 h-full overflow-y-auto custom-scrollbar">
+                        {/* Live / Text mode toggle */}
+                        <div className="flex items-center gap-2 p-1 rounded-xl bg-gray-800 border border-gray-700">
+                            <button
+                                onClick={() => setUseLiveMode(false)}
+                                className={`flex-1 py-2 text-sm rounded-lg font-medium transition-colors ${!useLiveMode ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                Text Mode
+                            </button>
+                            <button
+                                onClick={() => setUseLiveMode(true)}
+                                className={`flex-1 py-2 text-sm rounded-lg font-medium transition-colors ${useLiveMode ? 'bg-green-500 text-black' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                Live Audio
+                            </button>
+                        </div>
+
+                        {useLiveMode && sessionId ? (
+                            <>
+                                <BiometricMonitor onBiometricUpdate={handleBiometricUpdate} />
+                                <LiveCoachingInterface
+                                    sessionId={sessionId}
+                                    mode={mode}
+                                    biometricData={biometricData}
+                                    onSessionEnd={endSession}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <BiometricMonitor onBiometricUpdate={handleBiometricUpdate} />
+                                <AudioProcessor onAudioEvent={handleAudioEvent} />
+                                <SessionControls mode={mode} />
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

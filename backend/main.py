@@ -23,6 +23,9 @@ from dotenv import load_dotenv
 from gemini_client import GeminiClient
 from coaching_engine import CoachingEngine
 from session_manager import SessionManager
+from live_session import run_live_session
+from tts_service import create_tts_service
+from tutor_agent import IdleEngagementHandler, SpeechIntentAnalyzer
 
 # Load environment variables
 load_dotenv()
@@ -43,6 +46,8 @@ app.add_middleware(
 gemini_client = GeminiClient(api_key=os.getenv("GEMINI_API_KEY"))
 session_manager = SessionManager()
 coaching_engine = CoachingEngine(gemini_client, session_manager)
+tts_service = create_tts_service()
+idle_handler = IdleEngagementHandler(silence_threshold=45.0)
 
 # Active WebSocket connections
 active_connections: Dict[str, WebSocket] = {}
@@ -131,6 +136,45 @@ async def end_session(session_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class TTSRequest(BaseModel):
+    text: str
+    voice: Optional[str] = None
+    speaking_rate: Optional[float] = None
+
+
+@app.post("/api/tts")
+async def synthesize_speech(req: TTSRequest):
+    """
+    Convert text to speech using Google Cloud TTS.
+
+    Returns JSON:
+        { audio_b64, mime_type, viseme_events }
+
+    If the service is unavailable (no API key / httpx missing), responds with
+    HTTP 503 so the frontend can fall back to the Web Speech API.
+    """
+    text = (req.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="text is required")
+
+    if not tts_service.is_available():
+        raise HTTPException(
+            status_code=503,
+            detail="Google Cloud TTS is not configured (set GOOGLE_TTS_API_KEY)"
+        )
+
+    result = await tts_service.synthesize(
+        text,
+        voice_name=req.voice,
+        speaking_rate=req.speaking_rate,
+    )
+
+    if result is None:
+        raise HTTPException(status_code=502, detail="TTS synthesis failed")
+
+    return result
+
+
 # WebSocket endpoint for real-time coaching
 @app.websocket("/ws/coach/{session_id}")
 async def coaching_websocket(websocket: WebSocket, session_id: str):
@@ -199,11 +243,23 @@ async def coaching_websocket(websocket: WebSocket, session_id: str):
                             "message": "Empty transcript received"
                         })
                         continue
+
+                    # For tutoring mode: filter out speech not directed at the tutor
+                    if session.get("mode") == "tutoring":
+                        intent = SpeechIntentAnalyzer.classify(transcript)
+                        if intent == "HUMAN_SPEECH_AMBIENT":
+                            # Side conversation detected — ignore silently
+                            continue
+
                     response = await coaching_engine.process_text(
                         session_id=session_id,
                         text=transcript
                     )
                     await websocket.send_json(response)
+
+                    # Reset idle timer after each interaction (tutoring only)
+                    if session.get("mode") == "tutoring":
+                        await idle_handler.reset(session_id, websocket.send_json)
                     
 
 
@@ -253,7 +309,9 @@ async def coaching_websocket(websocket: WebSocket, session_id: str):
                         "message": f"Unsupported message type: {message_type}"
                     })
             except Exception as message_error:
+                import traceback
                 print(f"Message handling failed for type '{message_type}': {message_error}")
+                traceback.print_exc()
                 try:
                     await websocket.send_json({
                         "type": "error",
@@ -274,12 +332,42 @@ async def coaching_websocket(websocket: WebSocket, session_id: str):
         except Exception:
             pass
     finally:
+        idle_handler.cancel(session_id)
         if session_id in active_connections:
             del active_connections[session_id]
         try:
             await websocket.close()
         except:
             pass
+
+
+@app.websocket("/ws/live/{session_id}")
+async def live_coaching_websocket(websocket: WebSocket, session_id: str):
+    """
+    Bidirectional Gemini Live API WebSocket endpoint.
+    Streams raw PCM audio directly to/from Gemini Live API —
+    enabling natural conversation with native interruption support.
+    """
+    await websocket.accept()
+
+    session = await session_manager.get_session(session_id)
+    if not session:
+        await websocket.send_json({"type": "error", "message": "Session not found"})
+        await websocket.close()
+        return
+
+    api_key = os.getenv("GEMINI_API_KEY", "")
+    if not api_key:
+        await websocket.send_json({"type": "error", "message": "GEMINI_API_KEY not configured"})
+        await websocket.close()
+        return
+
+    await run_live_session(
+        websocket=websocket,
+        session_id=session_id,
+        mode=session["mode"],
+        api_key=api_key,
+    )
 
 
 if __name__ == "__main__":

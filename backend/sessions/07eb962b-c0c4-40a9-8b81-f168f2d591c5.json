@@ -1,0 +1,107 @@
+{
+  "session_id": "07eb962b-c0c4-40a9-8b81-f168f2d591c5",
+  "user_id": "user_shys6fvsp",
+  "mode": "tutoring",
+  "start_time": "2026-03-16T16:18:49.405379",
+  "end_time": "2026-03-16T16:19:26.609551",
+  "context_history": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "visual_content": "",
+      "timestamp": "2026-03-16T16:19:05.769685"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the standard language used to create the structure of web pages. Think of it as the skeleton of a house; it defines where the walls, doors, and windows go before you add any paint or furniture.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML Code, Browser Engine, Rendered Webpage, The browser reads the code and builds the visual structure."
+      },
+      "timestamp": "2026-03-16T16:19:14.793055"
+    },
+    {
+      "role": "user",
+      "content": "I don't know what's going on with that but",
+      "visual_content": "",
+      "timestamp": "2026-03-16T16:19:17.385839"
+    },
+    {
+      "role": "assistant",
+      "content": "To clarify, HTML works by using 'tags' to label different parts of your text. These tags are like containers that tell the web browser exactly how to display the information inside them.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "Raw Text, HTML Tags, Web Page, 'Tags transform plain text into structured elements'"
+      },
+      "timestamp": "2026-03-16T16:19:26.605548"
+    }
+  ],
+  "biometric_timeline": [],
+  "interactions": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "timestamp": "2026-03-16T16:19:05.769685"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the standard language used to create the structure of web pages. Think of it as the skeleton of a house; it defines where the walls, doors, and windows go before you add any paint or furniture.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML Code, Browser Engine, Rendered Webpage, The browser reads the code and builds the visual structure."
+      },
+      "timestamp": "2026-03-16T16:19:14.793055"
+    },
+    {
+      "role": "user",
+      "content": "I don't know what's going on with that but",
+      "timestamp": "2026-03-16T16:19:17.385839"
+    },
+    {
+      "role": "assistant",
+      "content": "To clarify, HTML works by using 'tags' to label different parts of your text. These tags are like containers that tell the web browser exactly how to display the information inside them.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "Raw Text, HTML Tags, Web Page, 'Tags transform plain text into structured elements'"
+      },
+      "timestamp": "2026-03-16T16:19:26.605548"
+    }
+  ],
+  "biometric_baseline": null,
+  "barge_in_sensitivity": 0.7,
+  "persona": null,
+  "duration": 37.204172,
+  "tutoring_step": 2,
+  "interview_state": {
+    "stage": "init",
+    "role": "",
+    "job_description": "",
+    "resume": "",
+    "started": false,
+    "start_time": null,
+    "question_count": 0,
+    "max_questions": 10,
+    "min_questions": 6,
+    "target_minutes": 10,
+    "max_minutes": 15,
+    "current_question": "",
+    "current_section": "",
+    "hint_used": false,
+    "last_question_time": null
+  },
+  "public_speaking_state": {
+    "stage": "init",
+    "speaking_type": "",
+    "topic": "",
+    "script": "",
+    "started": false,
+    "start_time": null,
+    "main_speech_start": null,
+    "followup_index": 0,
+    "followup_total": 3,
+    "word_count": 0,
+    "filler_count": 0,
+    "pause_count": 0,
+    "long_pause_count": 0
+  }
+}

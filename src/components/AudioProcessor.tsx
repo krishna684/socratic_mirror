@@ -33,10 +33,12 @@ const styles = {
         marginBottom: '1rem',
     },
     title: {
-        fontSize: '1.125rem',
-        fontWeight: 600,
-        color: '#fff',
+        fontSize: '1rem',
+        fontWeight: 700,
+        color: '#F3F4F6',
         margin: 0,
+        fontFamily: '"DM Sans","Inter",sans-serif',
+        letterSpacing: '-0.01em',
     },
     badge: {
         display: 'inline-flex',
@@ -521,13 +523,18 @@ export default function AudioProcessor({
         <div style={styles.card}>
             <div style={styles.header}>
                 <h3 style={styles.title}>Voice Processor</h3>
-                <div style={{ ...styles.badge, ...(isListening ? styles.badgeSuccess : styles.badgePaused) }}>
+                <div
+                    role="status"
+                    aria-live="polite"
+                    aria-label={isListening ? 'Voice processor listening' : 'Voice processor paused'}
+                    style={{ ...styles.badge, ...(isListening ? styles.badgeSuccess : styles.badgePaused) }}
+                >
                     {isListening ? 'Listening' : 'Paused'}
                 </div>
             </div>
 
             {/* Waveform Visualization */}
-            <div style={styles.waveformContainer}>
+            <div style={styles.waveformContainer} aria-hidden="true">
                 {waveHeights.map((height, i) => (
                     <div
                         key={i}
@@ -537,7 +544,7 @@ export default function AudioProcessor({
                             opacity: (!isUserSpeaking && !isAiSpeaking) ? 0.3 : 1,
                             background: isAiSpeaking ? 'linear-gradient(180deg, #3B82F6, #2563EB)' : 'linear-gradient(180deg, #FCD34D, #FBBF24)',
                         }}
-                    ></div>
+                    />
                 ))}
             </div>
 
@@ -555,8 +562,8 @@ export default function AudioProcessor({
             {/* Transcript Display */}
             {transcript && (
                 <div style={styles.transcript}>
-                    <div style={styles.transcriptLabel}>Live Transcript</div>
-                    <p style={styles.transcriptText}>{transcript}</p>
+                    <p style={styles.transcriptLabel} id="transcript-label">Live Transcript</p>
+                    <p style={styles.transcriptText} aria-labelledby="transcript-label" aria-live="polite">{transcript}</p>
                 </div>
             )}
         </div>

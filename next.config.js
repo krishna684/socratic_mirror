@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    output: 'standalone',
+    reactStrictMode: false,
+    turbopack: {},
     webpack: (config) => {
         // Allow importing GLSL shaders
         config.module.rules.push({

@@ -85,7 +85,7 @@ class MizzouContext:
                 ]
             }
         elif scenario_type == "tutoring":
-return {
+            return {
                 "location": "Ellis Library study room",
                 "subject_context": f"{random.choice(MizzouContext.PROGRAMS)} coursework",
                 "examples": [

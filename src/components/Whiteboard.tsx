@@ -208,23 +208,33 @@ const styles = {
         border: '1px solid rgba(255,255,255,0.12)',
         background: 'rgba(255,255,255,0.06)',
         color: '#D1D5DB',
-        fontSize: '0.72rem',
-        padding: '0.25rem 0.55rem',
+        fontSize: '0.75rem',
+        padding: '0.375rem 0.75rem',
         borderRadius: '0.5rem',
         cursor: 'pointer',
+        minHeight: '32px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        fontFamily: 'inherit',
     },
     jumpButton: {
         position: 'sticky' as const,
         bottom: '0.25rem',
         marginLeft: 'auto',
-        padding: '0.35rem 0.65rem',
-        borderRadius: '0.55rem',
+        padding: '0.5rem 0.875rem',
+        borderRadius: '0.625rem',
         border: '1px solid rgba(251,191,36,0.35)',
         background: 'rgba(251,191,36,0.14)',
         color: '#FCD34D',
-        fontSize: '0.72rem',
+        fontSize: '0.75rem',
         cursor: 'pointer',
         zIndex: 5,
+        minHeight: '36px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.25rem',
+        fontFamily: 'inherit',
+        fontWeight: 600,
     },
 };
 
@@ -544,11 +554,12 @@ export default function Whiteboard({ steps, archivedTopics, currentStepId, title
             <div ref={scrollRef} style={styles.scrollArea} onScroll={handleScroll}>
                 {archivedTopics.length > 0 && (
                     <div style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.8rem' }}>
-                        <div style={{ fontSize: '0.7rem', color: '#6B7280', marginBottom: '0.65rem', fontWeight: 600 }}>PAST TOPICS</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#9CA3AF', marginBottom: '0.65rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Past Topics</div>
                         {archivedTopics.map((topic, idx) => (
                             <div key={idx} style={{ marginBottom: '0.45rem' }}>
                                 <button
                                     onClick={() => toggleTopic(`topic-${idx}`)}
+                                    aria-expanded={expandedTopics.has(`topic-${idx}`)}
                                     style={{
                                         width: '100%',
                                         padding: '0.55rem 0.85rem',
@@ -562,10 +573,12 @@ export default function Whiteboard({ steps, archivedTopics, currentStepId, title
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
+                                        minHeight: '36px',
+                                        fontFamily: 'inherit',
                                     }}
                                 >
                                     <span>{topic.id}</span>
-                                    <span>{expandedTopics.has(`topic-${idx}`) ? 'v' : '>'}</span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transition: 'transform 0.2s ease', transform: expandedTopics.has(`topic-${idx}`) ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}><path d="M9 18l6-6-6-6"/></svg>
                                 </button>
                                 {expandedTopics.has(`topic-${idx}`) && (
                                     <div style={{ marginTop: '0.5rem', paddingLeft: '0.5rem', borderLeft: '2px solid rgba(255,255,255,0.05)' }}>
@@ -609,7 +622,7 @@ export default function Whiteboard({ steps, archivedTopics, currentStepId, title
                                     <ul style={styles.keyPoints}>
                                         {keyPoints.map((point, idx) => (
                                             <li key={idx} style={styles.keyPoint}>
-                                                <span style={styles.keyPointBullet}>*</span>
+                                                <span style={styles.keyPointBullet} aria-hidden="true">·</span>
                                                 {point}
                                             </li>
                                         ))}

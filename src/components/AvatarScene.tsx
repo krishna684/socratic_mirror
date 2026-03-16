@@ -7,8 +7,8 @@ import * as THREE from 'three';
 import AvatarModel from './AvatarModel';
 
 interface AvatarSceneProps {
-    expression?: 'neutral' | 'happy' | 'thinking' | 'concerned' | 'excited';
-    gesture?: 'idle' | 'greeting' | 'explaining' | 'pointing';
+    expression?: 'neutral' | 'happy' | 'thinking' | 'concerned' | 'excited' | 'explaining';
+    gesture?: 'idle' | 'greeting' | 'explaining' | 'pointing' | 'listening';
     isSpeaking?: boolean;
     speechEnergy?: number;
 }

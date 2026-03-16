@@ -1,0 +1,60 @@
+{
+  "session_id": "8fb21250-1407-4da9-9dd7-fd01d4e6a218",
+  "user_id": "user_gf7d1b426",
+  "mode": "interview",
+  "start_time": "2026-03-16T17:51:57.045624",
+  "end_time": "2026-03-16T17:52:48.697699",
+  "context_history": [
+    {
+      "role": "user",
+      "content": "yes",
+      "visual_content": "",
+      "timestamp": "2026-03-16T17:52:39.872418"
+    }
+  ],
+  "biometric_timeline": [],
+  "interactions": [
+    {
+      "role": "user",
+      "content": "yes",
+      "timestamp": "2026-03-16T17:52:39.872418"
+    }
+  ],
+  "biometric_baseline": null,
+  "barge_in_sensitivity": 0.7,
+  "persona": null,
+  "duration": 51.652075,
+  "tutoring_step": 0,
+  "interview_state": {
+    "stage": "interview",
+    "role": "",
+    "job_description": "html developer",
+    "resume": "",
+    "started": true,
+    "start_time": "2026-03-16T17:52:39.873815",
+    "question_count": 1,
+    "max_questions": 10,
+    "min_questions": 6,
+    "target_minutes": 10,
+    "max_minutes": 15,
+    "current_question": "Give me a quick overview of yourself and your background.",
+    "current_section": "warmup",
+    "hint_used": false,
+    "last_question_time": "2026-03-16T17:52:39.875068"
+  },
+  "public_speaking_state": {
+    "stage": "init",
+    "speaking_type": "",
+    "topic": "",
+    "script": "",
+    "started": false,
+    "start_time": null,
+    "main_speech_start": null,
+    "followup_index": 0,
+    "followup_total": 3,
+    "word_count": 0,
+    "filler_count": 0,
+    "pause_count": 0,
+    "long_pause_count": 0
+  }
+}

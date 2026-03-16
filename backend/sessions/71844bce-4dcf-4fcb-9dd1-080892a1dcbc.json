@@ -1,24 +1,24 @@
 {
-  "session_id": "f5855bff-d268-4587-9a55-e2159587912e",
-  "user_id": "user_94a3kdtub",
+  "session_id": "71844bce-4dcf-4fcb-9dd1-080892a1dcbc",
+  "user_id": "user_zrpef81om",
   "mode": "tutoring",
-  "start_time": "2026-02-08T23:32:56.938375",
-  "end_time": null,
+  "start_time": "2026-03-16T17:33:41.516120",
+  "end_time": "2026-03-16T17:34:22.059108",
   "context_history": [
     {
       "role": "user",
       "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
       "visual_content": "",
-      "timestamp": "2026-02-08T23:33:06.399656"
+      "timestamp": "2026-03-16T17:33:52.808311"
     },
     {
       "role": "assistant",
-      "content": "HTML, or HyperText Markup Language, serves as the structural skeleton of every webpage on the internet. It uses 'tags' to label pieces of content so the browser knows whether something is a heading, a paragraph, or an image.",
+      "content": "HTML, or HyperText Markup Language, is the structural foundation of every website. Rather than being a programming language that handles logic, it is a 'markup' language used to label and organize content for web browsers.",
       "visual_content": {
         "command": "DRAW_BOXES_AND_ARROWS",
-        "detail": "HTML Code, Browser, Visual Webpage, The browser reads the code and renders it as a structured page."
+        "detail": "Raw Content, HTML Tags, Rendered Webpage, HTML acts as the skeleton that holds content together."
       },
-      "timestamp": "2026-02-08T23:33:32.847345"
+      "timestamp": "2026-03-16T17:34:03.835787"
     }
   ],
   "biometric_timeline": [],
@@ -26,22 +26,22 @@
     {
       "role": "user",
       "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
-      "timestamp": "2026-02-08T23:33:06.399656"
+      "timestamp": "2026-03-16T17:33:52.808311"
     },
     {
       "role": "assistant",
-      "content": "HTML, or HyperText Markup Language, serves as the structural skeleton of every webpage on the internet. It uses 'tags' to label pieces of content so the browser knows whether something is a heading, a paragraph, or an image.",
+      "content": "HTML, or HyperText Markup Language, is the structural foundation of every website. Rather than being a programming language that handles logic, it is a 'markup' language used to label and organize content for web browsers.",
       "visual_content": {
         "command": "DRAW_BOXES_AND_ARROWS",
-        "detail": "HTML Code, Browser, Visual Webpage, The browser reads the code and renders it as a structured page."
+        "detail": "Raw Content, HTML Tags, Rendered Webpage, HTML acts as the skeleton that holds content together."
       },
-      "timestamp": "2026-02-08T23:33:32.847345"
+      "timestamp": "2026-03-16T17:34:03.835787"
     }
   ],
   "biometric_baseline": null,
   "barge_in_sensitivity": 0.7,
   "persona": null,
-  "duration": 0,
+  "duration": 40.542988,
   "tutoring_step": 1,
   "interview_state": {
     "stage": "init",

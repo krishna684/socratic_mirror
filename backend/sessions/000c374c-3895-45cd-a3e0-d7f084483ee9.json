@@ -1,0 +1,237 @@
+{
+  "session_id": "000c374c-3895-45cd-a3e0-d7f084483ee9",
+  "user_id": "user_3icylvdrn",
+  "mode": "tutoring",
+  "start_time": "2026-03-15T23:40:13.719671",
+  "end_time": "2026-03-15T23:43:05.538155",
+  "context_history": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "visual_content": "",
+      "timestamp": "2026-03-15T23:40:23.860217"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the standard language used to create the structure of web pages. It acts as a skeleton, using 'tags' to identify different types of content like headings, paragraphs, and links.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML, Structure, Webpage, HTML provides the underlying structure for every webpage."
+      },
+      "timestamp": "2026-03-15T23:40:32.610243"
+    },
+    {
+      "role": "user",
+      "content": "can you give more examples",
+      "visual_content": "",
+      "timestamp": "2026-03-15T23:40:59.069120"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML uses specific tags to define content types: <h1> creates the largest heading for titles, while <p> marks a paragraph of text.",
+      "visual_content": {
+        "steps": [
+          "<h1>Main Title</h1> - Used for top-level headings.",
+          "<p>This is a paragraph.</p> - Used for blocks of text.",
+          "<ul><li>List Item</li></ul> - Used for bulleted lists."
+        ]
+      },
+      "timestamp": "2026-03-15T23:41:07.654515"
+    },
+    {
+      "role": "user",
+      "content": "can you example for",
+      "visual_content": "",
+      "timestamp": "2026-03-15T23:41:24.089345"
+    },
+    {
+      "role": "assistant",
+      "content": "Beyond simple text, we use the <a> tag to create hyperlinks that connect different web pages and the <img> tag to embed visual images. The <div> tag acts as a generic container to group these elements together for layout purposes.",
+      "visual_content": {
+        "steps": [
+          "<a>: Hyperlinks (e.g., <a href='google.com'>Link</a>)",
+          "<img>: Images (e.g., <img src='photo.jpg'>)",
+          "<div>: Content Division/Container"
+        ]
+      },
+      "timestamp": "2026-03-15T23:41:32.791697"
+    },
+    {
+      "role": "user",
+      "content": "can you give it a code for any web page",
+      "visual_content": "",
+      "timestamp": "2026-03-15T23:41:56.501975"
+    },
+    {
+      "role": "assistant",
+      "content": "Every HTML document follows a standard structure that begins with a declaration to tell the browser it is an HTML5 file. This structure acts as a container for all the content you want to display.",
+      "visual_content": {
+        "steps": [
+          "<!DOCTYPE html> - Declares the document type",
+          "<html> - The root element of the page",
+          "<head> - Contains meta-information like the title",
+          "<body> - Contains the visible page content"
+        ]
+      },
+      "timestamp": "2026-03-15T23:42:02.426389"
+    },
+    {
+      "role": "user",
+      "content": "can you explain a court of Amazon web page",
+      "visual_content": "",
+      "timestamp": "2026-03-15T23:42:23.092628"
+    },
+    {
+      "role": "assistant",
+      "content": "A complex site like Amazon is organized into major semantic sections: a <header> for the search bar and logo, a <main> area for product listings, and a <footer> for legal links. This hierarchy tells the browser exactly which part of the page serves which purpose.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "Header (Search/Nav), Main (Products), Footer (Links), Amazon Layout Structure"
+      },
+      "timestamp": "2026-03-15T23:42:30.567610"
+    },
+    {
+      "role": "user",
+      "content": "okay thank you",
+      "visual_content": "",
+      "timestamp": "2026-03-15T23:42:53.089004"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML elements can also have 'attributes' which provide additional information or instructions to the browser. For example, the <a> tag uses the 'href' attribute to tell the browser exactly which URL to navigate to.",
+      "visual_content": "<a href=\"https://www.amazon.com\">Click Here</a>",
+      "timestamp": "2026-03-15T23:43:02.016891"
+    }
+  ],
+  "biometric_timeline": [],
+  "interactions": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "timestamp": "2026-03-15T23:40:23.860217"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the standard language used to create the structure of web pages. It acts as a skeleton, using 'tags' to identify different types of content like headings, paragraphs, and links.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML, Structure, Webpage, HTML provides the underlying structure for every webpage."
+      },
+      "timestamp": "2026-03-15T23:40:32.610243"
+    },
+    {
+      "role": "user",
+      "content": "can you give more examples",
+      "timestamp": "2026-03-15T23:40:59.069120"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML uses specific tags to define content types: <h1> creates the largest heading for titles, while <p> marks a paragraph of text.",
+      "visual_content": {
+        "steps": [
+          "<h1>Main Title</h1> - Used for top-level headings.",
+          "<p>This is a paragraph.</p> - Used for blocks of text.",
+          "<ul><li>List Item</li></ul> - Used for bulleted lists."
+        ]
+      },
+      "timestamp": "2026-03-15T23:41:07.654515"
+    },
+    {
+      "role": "user",
+      "content": "can you example for",
+      "timestamp": "2026-03-15T23:41:24.089345"
+    },
+    {
+      "role": "assistant",
+      "content": "Beyond simple text, we use the <a> tag to create hyperlinks that connect different web pages and the <img> tag to embed visual images. The <div> tag acts as a generic container to group these elements together for layout purposes.",
+      "visual_content": {
+        "steps": [
+          "<a>: Hyperlinks (e.g., <a href='google.com'>Link</a>)",
+          "<img>: Images (e.g., <img src='photo.jpg'>)",
+          "<div>: Content Division/Container"
+        ]
+      },
+      "timestamp": "2026-03-15T23:41:32.791697"
+    },
+    {
+      "role": "user",
+      "content": "can you give it a code for any web page",
+      "timestamp": "2026-03-15T23:41:56.501975"
+    },
+    {
+      "role": "assistant",
+      "content": "Every HTML document follows a standard structure that begins with a declaration to tell the browser it is an HTML5 file. This structure acts as a container for all the content you want to display.",
+      "visual_content": {
+        "steps": [
+          "<!DOCTYPE html> - Declares the document type",
+          "<html> - The root element of the page",
+          "<head> - Contains meta-information like the title",
+          "<body> - Contains the visible page content"
+        ]
+      },
+      "timestamp": "2026-03-15T23:42:02.426389"
+    },
+    {
+      "role": "user",
+      "content": "can you explain a court of Amazon web page",
+      "timestamp": "2026-03-15T23:42:23.092628"
+    },
+    {
+      "role": "assistant",
+      "content": "A complex site like Amazon is organized into major semantic sections: a <header> for the search bar and logo, a <main> area for product listings, and a <footer> for legal links. This hierarchy tells the browser exactly which part of the page serves which purpose.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "Header (Search/Nav), Main (Products), Footer (Links), Amazon Layout Structure"
+      },
+      "timestamp": "2026-03-15T23:42:30.567610"
+    },
+    {
+      "role": "user",
+      "content": "okay thank you",
+      "timestamp": "2026-03-15T23:42:53.089004"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML elements can also have 'attributes' which provide additional information or instructions to the browser. For example, the <a> tag uses the 'href' attribute to tell the browser exactly which URL to navigate to.",
+      "visual_content": "<a href=\"https://www.amazon.com\">Click Here</a>",
+      "timestamp": "2026-03-15T23:43:02.016891"
+    }
+  ],
+  "biometric_baseline": null,
+  "barge_in_sensitivity": 0.7,
+  "persona": null,
+  "duration": 171.818484,
+  "tutoring_step": 6,
+  "interview_state": {
+    "stage": "init",
+    "role": "",
+    "job_description": "",
+    "resume": "",
+    "started": false,
+    "start_time": null,
+    "question_count": 0,
+    "max_questions": 10,
+    "min_questions": 6,
+    "target_minutes": 10,
+    "max_minutes": 15,
+    "current_question": "",
+    "current_section": "",
+    "hint_used": false,
+    "last_question_time": null
+  },
+  "public_speaking_state": {
+    "stage": "init",
+    "speaking_type": "",
+    "topic": "",
+    "script": "",
+    "started": false,
+    "start_time": null,
+    "main_speech_start": null,
+    "followup_index": 0,
+    "followup_total": 3,
+    "word_count": 0,
+    "filler_count": 0,
+    "pause_count": 0,
+    "long_pause_count": 0
+  }
+}

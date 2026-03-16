@@ -1,0 +1,239 @@
+{
+  "session_id": "a8232f91-2d82-43e0-8078-0cb24457ae94",
+  "user_id": "user_f603nl7sa",
+  "mode": "tutoring",
+  "start_time": "2026-03-16T17:38:48.823681",
+  "end_time": "2026-03-16T17:39:34.206584",
+  "context_history": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "visual_content": "",
+      "timestamp": "2026-03-16T17:38:56.745013"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the standard language used to create the structure of web pages. It acts as the skeleton of a site, defining where elements like headings, paragraphs, and images appear.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML Code, Browser Rendering, Visual Webpage, HTML provides the hidden structure that browsers turn into visual content."
+      },
+      "timestamp": "2026-03-16T17:39:08.207255"
+    }
+  ],
+  "biometric_timeline": [
+    {
+      "heart_rate": 44,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 60,
+      "confidence_level": 61.68208329375818,
+      "timestamp": "2026-03-16T17:39:21.332055"
+    },
+    {
+      "heart_rate": 41,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 63.576813495140065,
+      "timestamp": "2026-03-16T17:39:22.356981"
+    },
+    {
+      "heart_rate": 42,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 66.51137218616671,
+      "timestamp": "2026-03-16T17:39:23.409768"
+    },
+    {
+      "heart_rate": 42,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 68.13817247015422,
+      "timestamp": "2026-03-16T17:39:24.458332"
+    },
+    {
+      "heart_rate": 41,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 68.70664358538298,
+      "timestamp": "2026-03-16T17:39:25.506176"
+    },
+    {
+      "heart_rate": 41,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 68.76533115385908,
+      "timestamp": "2026-03-16T17:39:26.613060"
+    },
+    {
+      "heart_rate": 45,
+      "stress_level": "medium",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 68.91124155886492,
+      "timestamp": "2026-03-16T17:39:27.661858"
+    },
+    {
+      "heart_rate": 43,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 68.2894935247115,
+      "timestamp": "2026-03-16T17:39:28.685004"
+    },
+    {
+      "heart_rate": 43,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 67.44238036231057,
+      "timestamp": "2026-03-16T17:39:29.731404"
+    },
+    {
+      "heart_rate": 43,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 63.49654916137154,
+      "timestamp": "2026-03-16T17:39:30.761199"
+    },
+    {
+      "heart_rate": 43,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 62.63940832534156,
+      "timestamp": "2026-03-16T17:39:31.811878"
+    },
+    {
+      "heart_rate": 42,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 60,
+      "confidence_level": 62.898752202805085,
+      "timestamp": "2026-03-16T17:39:32.880776"
+    },
+    {
+      "heart_rate": 42,
+      "stress_level": "low",
+      "gaze_direction": [
+        0,
+        0,
+        0
+      ],
+      "posture_score": 100,
+      "confidence_level": 62.576357046219826,
+      "timestamp": "2026-03-16T17:39:33.925549"
+    }
+  ],
+  "interactions": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "timestamp": "2026-03-16T17:38:56.745013"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the standard language used to create the structure of web pages. It acts as the skeleton of a site, defining where elements like headings, paragraphs, and images appear.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML Code, Browser Rendering, Visual Webpage, HTML provides the hidden structure that browsers turn into visual content."
+      },
+      "timestamp": "2026-03-16T17:39:08.207255"
+    }
+  ],
+  "biometric_baseline": {
+    "resting_heart_rate": 42.5,
+    "stress_threshold": 51.0,
+    "calibration_date": "2026-03-16T17:39:30.761276"
+  },
+  "barge_in_sensitivity": 0.7,
+  "persona": null,
+  "duration": 45.382903,
+  "tutoring_step": 1,
+  "interview_state": {
+    "stage": "init",
+    "role": "",
+    "job_description": "",
+    "resume": "",
+    "started": false,
+    "start_time": null,
+    "question_count": 0,
+    "max_questions": 10,
+    "min_questions": 6,
+    "target_minutes": 10,
+    "max_minutes": 15,
+    "current_question": "",
+    "current_section": "",
+    "hint_used": false,
+    "last_question_time": null
+  },
+  "public_speaking_state": {
+    "stage": "init",
+    "speaking_type": "",
+    "topic": "",
+    "script": "",
+    "started": false,
+    "start_time": null,
+    "main_speech_start": null,
+    "followup_index": 0,
+    "followup_total": 3,
+    "word_count": 0,
+    "filler_count": 0,
+    "pause_count": 0,
+    "long_pause_count": 0
+  }
+}

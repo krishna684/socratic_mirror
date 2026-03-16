@@ -1,0 +1,107 @@
+{
+  "session_id": "8d870336-b45c-4f79-b208-62a4a503f03b",
+  "user_id": "user_7cfltyiuf",
+  "mode": "tutoring",
+  "start_time": "2026-03-16T15:24:46.626967",
+  "end_time": "2026-03-16T15:25:38.084069",
+  "context_history": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "visual_content": "",
+      "timestamp": "2026-03-16T15:24:53.529975"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the standard language used to create the structure of web pages. Think of it as the skeleton of a building; it defines where the walls, windows, and doors go, but doesn't handle the paint or furniture.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML (Skeleton), CSS (Skin/Style), JavaScript (Muscles/Action), The relationship between web technologies"
+      },
+      "timestamp": "2026-03-16T15:25:00.915734"
+    },
+    {
+      "role": "user",
+      "content": "right",
+      "visual_content": "",
+      "timestamp": "2026-03-16T15:25:20.254868"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML uses 'tags' to mark up content, usually coming in pairs: an opening tag and a closing tag. Closing tags are identical to opening tags but include a forward slash before the tag name to signify the end of a section.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "<tag>, Content, </tag>, Anatomy of an HTML Element"
+      },
+      "timestamp": "2026-03-16T15:25:28.153820"
+    }
+  ],
+  "biometric_timeline": [],
+  "interactions": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "timestamp": "2026-03-16T15:24:53.529975"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the standard language used to create the structure of web pages. Think of it as the skeleton of a building; it defines where the walls, windows, and doors go, but doesn't handle the paint or furniture.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML (Skeleton), CSS (Skin/Style), JavaScript (Muscles/Action), The relationship between web technologies"
+      },
+      "timestamp": "2026-03-16T15:25:00.915734"
+    },
+    {
+      "role": "user",
+      "content": "right",
+      "timestamp": "2026-03-16T15:25:20.254868"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML uses 'tags' to mark up content, usually coming in pairs: an opening tag and a closing tag. Closing tags are identical to opening tags but include a forward slash before the tag name to signify the end of a section.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "<tag>, Content, </tag>, Anatomy of an HTML Element"
+      },
+      "timestamp": "2026-03-16T15:25:28.153820"
+    }
+  ],
+  "biometric_baseline": null,
+  "barge_in_sensitivity": 0.7,
+  "persona": null,
+  "duration": 51.457102,
+  "tutoring_step": 2,
+  "interview_state": {
+    "stage": "init",
+    "role": "",
+    "job_description": "",
+    "resume": "",
+    "started": false,
+    "start_time": null,
+    "question_count": 0,
+    "max_questions": 10,
+    "min_questions": 6,
+    "target_minutes": 10,
+    "max_minutes": 15,
+    "current_question": "",
+    "current_section": "",
+    "hint_used": false,
+    "last_question_time": null
+  },
+  "public_speaking_state": {
+    "stage": "init",
+    "speaking_type": "",
+    "topic": "",
+    "script": "",
+    "started": false,
+    "start_time": null,
+    "main_speech_start": null,
+    "followup_index": 0,
+    "followup_total": 3,
+    "word_count": 0,
+    "filler_count": 0,
+    "pause_count": 0,
+    "long_pause_count": 0
+  }
+}

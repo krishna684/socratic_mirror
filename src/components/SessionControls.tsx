@@ -33,10 +33,11 @@ const styles = {
         flex: 1,
     },
     modeLabel: {
-        fontSize: '0.65rem',
+        fontSize: '0.6875rem',
         color: '#9CA3AF',
         textTransform: 'uppercase' as const,
-        letterSpacing: '0.05em',
+        letterSpacing: '0.06em',
+        fontWeight: 600,
         marginBottom: '0.1rem',
     },
     modeTitle: {
@@ -93,9 +94,9 @@ const styles = {
         marginTop: 'auto',
     },
     infoText: {
-        fontSize: '0.7rem',
+        fontSize: '0.75rem',
         color: '#9CA3AF',
-        lineHeight: '1.4',
+        lineHeight: 1.5,
         margin: 0,
     },
 };
@@ -152,7 +153,7 @@ export default function SessionControls({ mode }: SessionControlsProps) {
         >
             <div>
                 <h4 style={styles.tipsHeader}>
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                     Tips for Success
@@ -173,7 +174,7 @@ export default function SessionControls({ mode }: SessionControlsProps) {
                     borderColor: config.borderColor,
                 }}
             >
-                <svg width="20" height="20" fill="#FBBF24" viewBox="0 0 20 20" style={{ flexShrink: 0, marginTop: '2px' }}>
+                <svg width="20" height="20" fill="#FBBF24" viewBox="0 0 20 20" style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden="true">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
                 <p style={styles.infoText}>

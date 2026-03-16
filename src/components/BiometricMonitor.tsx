@@ -203,15 +203,19 @@ export default function BiometricMonitor({ onBiometricUpdate }: BiometricMonitor
             <div style={{
                 background: 'rgba(255, 255, 255, 0.03)',
                 backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '1rem',
-                padding: '1rem',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: '1.5rem',
+                padding: '1.5rem',
             }}>
-                <div style={{ textAlign: 'center', padding: '1rem' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</div>
-                    <p style={{ fontSize: '0.875rem', color: '#F87171', marginBottom: '1rem' }}>{error}</p>
-                    <button onClick={() => { setError(null); initializeCamera(); }}
-                        style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', background: '#FBBF24', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                <div style={{ textAlign: 'center', padding: '0.5rem' }}>
+                    <div style={{ width: '40px', height: '40px', background: 'rgba(239,68,68,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' }} aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <p style={{ fontSize: '0.8125rem', color: '#F87171', marginBottom: '1rem', lineHeight: 1.5 }}>{error}</p>
+                    <button
+                        onClick={() => { setError(null); initializeCamera(); }}
+                        style={{ padding: '0.625rem 1.25rem', borderRadius: '0.75rem', background: 'linear-gradient(135deg, #FCD34D, #FBBF24)', color: '#0a0a0a', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem', minHeight: '44px', fontFamily: '"DM Sans","Inter",sans-serif' }}
+                    >
                         Try Again
                     </button>
                 </div>
@@ -231,8 +235,10 @@ export default function BiometricMonitor({ onBiometricUpdate }: BiometricMonitor
                 border: '1px solid rgba(255, 255, 255, 0.08)',
             }}>
                 <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem', animation: 'pulse 1.5s infinite' }}>📹</div>
-                    <p style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>Initializing Camera...</p>
+                    <div style={{ width: '40px', height: '40px', background: 'rgba(251,191,36,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.625rem', animation: 'pulse 1.5s ease-in-out infinite' }} aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    </div>
+                    <p style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>Initializing Camera…</p>
                 </div>
             </div>
         );
@@ -252,13 +258,13 @@ export default function BiometricMonitor({ onBiometricUpdate }: BiometricMonitor
         }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0 }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', margin: 0 }}>Biometrics</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#F3F4F6', margin: 0, fontFamily: '"DM Sans","Inter",sans-serif', letterSpacing: '-0.01em' }}>Biometrics</h3>
                 <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem', borderRadius: '1rem', background: 'rgba(34, 197, 94, 0.2)', color: '#4ADE80', fontWeight: 600 }}>LIVE</span>
             </div>
 
             {/* Video */}
             <div style={{ position: 'relative', borderRadius: '1rem', overflow: 'hidden', background: '#000', marginBottom: '1rem', flex: 1, minHeight: '180px', aspectRatio: '4/3' }}>
-                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <video ref={videoRef} autoPlay playsInline muted aria-label="Camera feed for biometric monitoring" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
 
                 {/* Gentle Correction Overlay */}
@@ -292,25 +298,29 @@ export default function BiometricMonitor({ onBiometricUpdate }: BiometricMonitor
             `}</style>
 
             {/* Metrics */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '0.5rem' }}>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.6rem', color: '#9CA3AF', marginBottom: '0.25rem' }}>HEART RATE</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>{Math.round(heartRate)}</div>
-                    <div style={{ fontSize: '0.6rem', color: '#9CA3AF' }}>BPM</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.625rem 0.5rem', borderRadius: '0.75rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.625rem', color: '#9CA3AF', marginBottom: '0.25rem', letterSpacing: '0.06em', fontWeight: 600, textTransform: 'uppercase' as const }}>HR</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#F3F4F6', fontFamily: '"DM Sans","Inter",sans-serif', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{Math.round(heartRate)}</div>
+                    <div style={{ fontSize: '0.625rem', color: '#6B7280', marginTop: '0.125rem' }}>BPM</div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.6rem', color: '#9CA3AF', marginBottom: '0.25rem' }}>STRESS</div>
-                    <div style={{
-                        width: '12px', height: '12px', borderRadius: '50%', margin: '0.25rem auto',
-                        background: stressLevel === 'low' ? '#4ADE80' : stressLevel === 'medium' ? '#FBBF24' : '#F87171',
-                        boxShadow: `0 0 10px ${stressLevel === 'low' ? '#4ADE80' : stressLevel === 'medium' ? '#FBBF24' : '#F87171'}`
-                    }} />
-                    <div style={{ fontSize: '0.7rem', color: '#fff', textTransform: 'capitalize' }}>{stressLevel}</div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.625rem 0.5rem', borderRadius: '0.75rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.625rem', color: '#9CA3AF', marginBottom: '0.375rem', letterSpacing: '0.06em', fontWeight: 600, textTransform: 'uppercase' as const }}>STRESS</div>
+                    <div
+                        role="status"
+                        aria-label={`Stress level: ${stressLevel}`}
+                        style={{
+                            width: '12px', height: '12px', borderRadius: '50%', margin: '0 auto 0.25rem',
+                            background: stressLevel === 'low' ? '#4ADE80' : stressLevel === 'medium' ? '#FBBF24' : '#F87171',
+                            boxShadow: `0 0 8px ${stressLevel === 'low' ? '#4ADE80' : stressLevel === 'medium' ? '#FBBF24' : '#F87171'}`,
+                        }}
+                    />
+                    <div style={{ fontSize: '0.6875rem', color: '#E5E7EB', textTransform: 'capitalize' as const, fontWeight: 600 }}>{stressLevel}</div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.6rem', color: '#9CA3AF', marginBottom: '0.25rem' }}>SIGNAL</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>{Math.round(signalQuality)}</div>
-                    <div style={{ fontSize: '0.6rem', color: '#9CA3AF' }}>%</div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.625rem 0.5rem', borderRadius: '0.75rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.625rem', color: '#9CA3AF', marginBottom: '0.25rem', letterSpacing: '0.06em', fontWeight: 600, textTransform: 'uppercase' as const }}>SIG</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#F3F4F6', fontFamily: '"DM Sans","Inter",sans-serif', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{Math.round(signalQuality)}</div>
+                    <div style={{ fontSize: '0.625rem', color: '#6B7280', marginTop: '0.125rem' }}>%</div>
                 </div>
             </div>
         </div>

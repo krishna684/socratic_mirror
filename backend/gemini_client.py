@@ -10,6 +10,7 @@ import json
 import re
 
 import google.generativeai as genai
+from tutor_agent import TutorPersonalityLayer
 try:
     from google import genai as genai_live
     from google.genai import types as genai_types
@@ -67,48 +68,41 @@ class GeminiClient:
             for model in genai.list_models():
                 name = model.name.replace("models/", "")
                 methods = getattr(model, "supported_generation_methods", []) or []
-                if "generateContent" in methods and name.startswith("gemini"):
+                if "generateContent" in methods and name.startswith("gemini") and "image" not in name:
                     discovered.append(name)
         except Exception as e:
             print(f"Warning: Could not list Gemini models: {e}")
         return discovered
 
     def _candidate_models(self, thinking_level: str = "low") -> List[str]:
+        # Free-tier accessible models — reliable fallbacks
         static_fallback_low = [
-            "gemini-3.0-flash",
-            "gemini-3.0-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-lite",
         ]
         static_fallback_high = [
-            "gemini-3.0-pro",
-            "gemini-3.0-flash",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
         ]
 
         candidates: List[str] = []
         preferred = self._preferred_models.get(thinking_level)
-        if preferred and preferred.startswith("gemini-3"):
+        if preferred:
             candidates.append(preferred)
 
         discovered = self._discover_models()
         if discovered:
-            discovered = [name for name in discovered if name.startswith("gemini-3")]
+            # Prefer gemini-3 flash/preview if available, but exclude pro-only models
+            # that have limit:0 on free tier
+            gemini3 = [
+                name for name in discovered
+                if name.startswith("gemini-3") and "pro" not in name
+            ]
             if thinking_level == "high":
-                ranked = sorted(
-                    discovered,
-                    key=lambda n: (
-                        "pro" not in n,
-                        "flash" in n,
-                        n,
-                    ),
-                )
+                ranked = sorted(gemini3, key=lambda n: ("flash" in n, n))
             else:
-                ranked = sorted(
-                    discovered,
-                    key=lambda n: (
-                        "flash" not in n,
-                        "lite" not in n and "exp" in n,
-                        n,
-                    ),
-                )
+                ranked = sorted(gemini3, key=lambda n: ("lite" not in n and "exp" in n, n))
             candidates.extend(ranked)
 
         candidates.extend(static_fallback_high if thinking_level == "high" else static_fallback_low)
@@ -385,24 +379,28 @@ class GeminiClient:
         current_step = int(session_meta.get("current_step", 0))
 
         system_prompts = {
-            "tutoring": f"""You are an Elite Socratic Tutor. Lead the student through a topic using a synchronized Whiteboard experience.
+            "tutoring": TutorPersonalityLayer.enrich_prompt(
+                f"""You are an Elite Socratic Tutor. Lead the student through a topic using a synchronized Whiteboard experience.
 
-RULES:
-1. TAKE CHARGE ONLY ON FIRST TURN: If this is the first response, start explaining immediately.
-2. FOLLOW-UP PRIORITY: For later turns, answer the MOST RECENT user message directly first.
-3. NO REPETITION: Do NOT repeat earlier explanations unless the user explicitly asks to recap/repeat.
-4. LOGICAL-STEPS: Break explanations into 1-3 sentence "steps".
-5. VISUAL-FIRST: Every major concept MUST be shown on the whiteboard.
-6. MONOTONIC: Continue incrementing "step" numbers. Current step is {current_step}, so next step should be >= {current_step + 1}.
-7. CHECK-INS: Every 3-4 steps, perform a "check_in".
-8. RELEVANCE: Keep response tightly aligned to the latest user question.
+CORE RULES (NEVER SKIP):
+1. FIRST TURN: Start teaching immediately — no greeting, no preamble.
+2. FOLLOW-UP PRIORITY: For later turns, answer the MOST RECENT user message directly first, then continue.
+3. NO REPETITION: Do NOT repeat earlier explanations unless the student explicitly asks.
+4. LOGICAL STEPS: Break explanations into 1-3 sentence chunks — one idea per step.
+5. VISUAL-FIRST: Every major concept MUST appear on the whiteboard.
+6. MONOTONIC STEPS: Current step is {current_step}. Next step must be >= {current_step + 1}.
+7. CHECK-INS: Every 3-4 steps, emit a check_in to verify understanding.
+8. RELEVANCE: Stay tightly aligned to the student's latest message.
 
-OUTPUT SCHEMA (Return ONLY raw JSON):
-- {{ "kind": "step", "step": 1, "subtopic_id": "intro", "narration": "..", "visual": {{ "type": "equation", "content": ".." }}, "avatar_intent": {{"expression": "..", "gesture": ".."}} }}
-- {{ "kind": "check_in", "narration": "..", "options": [".."], "step": 5 }}
+OUTPUT SCHEMA (Return ONLY raw JSON, no markdown fences):
+- {{"kind": "step", "step": 1, "subtopic_id": "intro", "narration": "..", "visual": {{"type": "equation", "content": ".."}}, "avatar_intent": {{"expression": "..", "gesture": ".."}}, "suggestions": [".."]}}
+- {{"kind": "check_in", "narration": "..", "options": ["Understood, continue", "Show an example", "Explain differently", "Try a practice problem"], "step": 5, "suggestions": ["Go deeper", "See a real-world example", "Try a practice problem", "Move to the next concept"]}}
 
 VISUAL TYPES: "equation", "step_list" ({{"steps": []}}), "diagram" (DRAW_NUMBER_LINE, DRAW_COORDINATE_PLANE, DRAW_BOXES_AND_ARROWS: Label1, Label2, Label3, Description), "table", "none".
-""",
+
+AVATAR EXPRESSIONS: neutral, happy, thinking, concerned, excited, explaining
+AVATAR GESTURES: idle, greeting, explaining, pointing, listening"""
+            ),
             "public_speaking": """You are a Public Speaking Coach.
 Stay silent while the user speaks unless they stop for a long time.
 Provide feedback on pace, confidence, and clarity.
@@ -428,6 +426,26 @@ Always return JSON with:
             mode,
             "You are a helpful AI assistant. Return JSON with voice_text and visual_content.",
         )
+
+        # Inject agentic tutor signals into prompt for tutoring mode
+        if mode == "tutoring" and session_meta:
+            action_hint = session_meta.get("action_hint")
+            confusion_level = session_meta.get("confusion_level")
+            additions: list[str] = []
+            if action_hint == "re_explain":
+                additions.append("AGENT HINT: Student is confused. Use a COMPLETELY DIFFERENT explanation approach — try an analogy, real-world story, or slower visual breakdown. Do NOT restate what you already said.")
+            elif action_hint == "provide_example":
+                additions.append("AGENT HINT: Lead with a concrete real-world example before any theory this turn.")
+            elif action_hint == "ask_socratic":
+                additions.append("AGENT HINT: Open with a guiding Socratic question before explaining.")
+            elif action_hint == "suggest_path":
+                additions.append("AGENT HINT: Offer 2-3 possible learning directions the student can choose from.")
+            if confusion_level == "high":
+                additions.append("CONFUSION ALERT: Student has expressed confusion multiple times. Slow down significantly and try a completely different angle.")
+            elif confusion_level == "medium":
+                additions.append("CONFUSION NOTE: Student seems somewhat confused. Try an analogy or concrete example.")
+            if additions:
+                system_prompt = system_prompt + "\n\n" + "\n".join(additions)
 
         # Keep focused recent history so latest intent dominates.
         history_window = messages[-12:] if len(messages) > 12 else messages

@@ -1,0 +1,78 @@
+{
+  "session_id": "7caf50af-0522-4361-aa6f-82bb70b8a3f0",
+  "user_id": "user_jk8q13ry0",
+  "mode": "tutoring",
+  "start_time": "2026-03-16T15:03:38.676052",
+  "end_time": "2026-03-16T15:04:20.517990",
+  "context_history": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "visual_content": "",
+      "timestamp": "2026-03-16T15:03:53.082558"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the foundational building block of the web. It provides the structural skeleton of a website, defining where content like text, links, and images are placed.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML, Structure, Content, HTML defines the structure which then holds the content."
+      },
+      "timestamp": "2026-03-16T15:04:04.140839"
+    }
+  ],
+  "biometric_timeline": [],
+  "interactions": [
+    {
+      "role": "user",
+      "content": "I want to learn about: html. DO NOT greet me. Immediately start lesson Step 1 by explaining the core concept on the whiteboard.",
+      "timestamp": "2026-03-16T15:03:53.082558"
+    },
+    {
+      "role": "assistant",
+      "content": "HTML, or HyperText Markup Language, is the foundational building block of the web. It provides the structural skeleton of a website, defining where content like text, links, and images are placed.",
+      "visual_content": {
+        "command": "DRAW_BOXES_AND_ARROWS",
+        "detail": "HTML, Structure, Content, HTML defines the structure which then holds the content."
+      },
+      "timestamp": "2026-03-16T15:04:04.140839"
+    }
+  ],
+  "biometric_baseline": null,
+  "barge_in_sensitivity": 0.7,
+  "persona": null,
+  "duration": 41.841938,
+  "tutoring_step": 1,
+  "interview_state": {
+    "stage": "init",
+    "role": "",
+    "job_description": "",
+    "resume": "",
+    "started": false,
+    "start_time": null,
+    "question_count": 0,
+    "max_questions": 10,
+    "min_questions": 6,
+    "target_minutes": 10,
+    "max_minutes": 15,
+    "current_question": "",
+    "current_section": "",
+    "hint_used": false,
+    "last_question_time": null
+  },
+  "public_speaking_state": {
+    "stage": "init",
+    "speaking_type": "",
+    "topic": "",
+    "script": "",
+    "started": false,
+    "start_time": null,
+    "main_speech_start": null,
+    "followup_index": 0,
+    "followup_total": 3,
+    "word_count": 0,
+    "filler_count": 0,
+    "pause_count": 0,
+    "long_pause_count": 0
+  }
+}
