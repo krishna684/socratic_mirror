@@ -167,23 +167,43 @@ npm start
 
 ## Architecture Overview
 
-```text
-Browser                          Server
-┌──────────────────┐       ┌──────────────────┐
-│  Next.js App     │       │  FastAPI          │
-│                  │       │                  │
-│  CoachingSession │◄─ws──►│  WebSocket        │
-│  AudioProcessor  │       │  CoachingEngine   │
-│  BiometricMonitor│       │  GeminiClient     │
-│  AvatarScene     │       │  SessionManager   │
-│  Whiteboard      │       │                  │
-└──────────────────┘       └───────┬──────────┘
-                                   │
-                           ┌───────▼──────────┐
-                           │  Google Gemini    │
-                           │  API              │
-                           └──────────────────┘
+```mermaid
+flowchart LR
+    subgraph FE[Frontend - Browser]
+        UI[Next.js App\nCoachingSession / LiveCoachingInterface]
+        CAM[BiometricMonitor\nCamera + rPPG]
+        MIC[AudioProcessor\nMic + transcript]
+    end
+
+    subgraph BE[Backend - FastAPI]
+        API[REST Endpoints\n/api/session/*, /api/tts]
+        WS1[WebSocket\n/ws/coach/{session_id}]
+        WS2[WebSocket\n/ws/live/{session_id}]
+        ENG[CoachingEngine]
+        GM[GeminiClient]
+        SM[SessionManager]
+    end
+
+    GEM[Google Gemini API\nGenerate Content]
+    LIVE[Gemini Live API\nRealtime Audio/Video]
+    DB[(Session Storage\nJSON files in backend/sessions)]
+
+    UI -->|POST create session| API
+    UI <-->|coach WS messages| WS1
+    UI <-->|live WS audio/video| WS2
+    CAM -->|biometric_data / biometric_update| WS1
+    CAM -->|biometric_update| WS2
+    MIC -->|user_speech transcript| WS1
+
+    WS1 --> ENG --> GM --> GEM
+    WS2 --> LIVE
+
+    API --> SM
+    ENG --> SM
+    SM --> DB
 ```
+
+For a complete architecture document with sequence and deployment diagrams, see `architecture.md`.
 
 - Frontend creates a session via `POST /api/session/create`, then opens a WebSocket at `/ws/coach/{session_id}`.
 - Speech transcripts are sent as `user_speech` messages; biometric data is sent every second as `biometric_data` messages.
@@ -197,6 +217,189 @@ Browser                          Server
 - Requires a **WebGL-capable browser** (Chrome or Edge recommended).
 - The system targets **sub-200ms** response times for real-time interaction.
 
+## Reproducible Testing
+
+### 1. Verify Gemini model access
+
+Create `backend/test_gemini.py`:
+
+```python
+import os, asyncio, google.generativeai as genai
+from dotenv import load_dotenv
+load_dotenv()
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+model = genai.GenerativeModel("gemini-2.0-flash-exp")
+resp = asyncio.run(model.generate_content_async("Say hello"))
+print("Gemini connection OK -", resp.text[:60])
+```
+
+```bash
+cd backend && python3 test_gemini.py
+```
+
+---
+
+### 2. Tutor agent modules (no API key required)
+
+Create `backend/test_tutor_agent.py`:
+
+```python
+from tutor_agent import (
+    TutorPersonalityLayer, TutorAgentDecisionEngine,
+    SpeechIntentAnalyzer, AudioClassifier
+)
+
+layer = TutorPersonalityLayer()
+prompt = layer.enrich_prompt("Teach Python basics.")
+assert "honest" in prompt.lower() or "patient" in prompt.lower()
+print("TutorPersonalityLayer OK")
+
+engine = TutorAgentDecisionEngine()
+engine.update_from_student("sess1", "I am confused about this")
+action = engine.next_action("sess1")
+assert action in ("re_explain", "provide_example", "ask_socratic", "continue", "suggest_path")
+print(f"TutorAgentDecisionEngine OK - action={action}")
+
+assert SpeechIntentAnalyzer.classify("") == "EMPTY"
+assert SpeechIntentAnalyzer.classify("what is recursion?") == "HUMAN_SPEECH_DIRECTED"
+print("SpeechIntentAnalyzer OK")
+
+assert AudioClassifier.classify(bytes(200)) == "SILENCE"
+print("AudioClassifier OK")
+
+print("All tutor_agent tests passed.")
+```
+
+```bash
+cd backend && python3 test_tutor_agent.py
+```
+
+---
+
+### 3. TTS service test
+
+Create `backend/test_tts.py`:
+
+```python
+import os, requests
+from dotenv import load_dotenv
+load_dotenv()
+key = os.environ.get("GOOGLE_TTS_API_KEY", "")
+r = requests.post(
+    f"https://texttospeech.googleapis.com/v1/text:synthesize?key={key}",
+    json={
+        "input": {"text": "Hello"},
+        "voice": {"languageCode": "en-US", "name": "en-US-Neural2-F"},
+        "audioConfig": {"audioEncoding": "MP3"}
+    },
+    timeout=10,
+)
+assert r.status_code == 200, f"TTS API error {r.status_code}: {r.text[:200]}"
+assert "audioContent" in r.json()
+print(f"Google TTS OK - audio base64 length: {len(r.json()['audioContent'])}")
+```
+
+```bash
+cd backend && python3 test_tts.py
+```
+
+---
+
+### 4. Backend health check
+
+With the backend running (`uvicorn main:app --reload --port 8000`):
+
+```bash
+curl -s http://localhost:8000/health | python3 -m json.tool
+```
+
+Expected: `{"status": "ok"}`
+
+---
+
+### 5. Session creation
+
+```bash
+curl -s -X POST http://localhost:8000/api/session/create \
+  -H "Content-Type: application/json" \
+  -d '{"mode":"tutoring","topic":"Python lists"}' \
+  | python3 -m json.tool
+```
+
+Expected: JSON with a `session_id` UUID field.
+
+---
+
+### 6. WebSocket coaching flow
+
+Create `backend/test_websocket.py`:
+
+```python
+import asyncio, json, websockets
+
+async def test():
+    uri = "ws://localhost:8000/ws/coaching/test-ws-session"
+    async with websockets.connect(uri) as ws:
+        await ws.send(json.dumps({
+            "type": "user_speech",
+            "text": "Explain what a list is in Python",
+            "mode": "tutoring",
+            "topic": "Python lists"
+        }))
+        msg = await asyncio.wait_for(ws.recv(), timeout=30)
+        data = json.loads(msg)
+        assert data.get("type") in ("step", "check_in", "response", "error")
+        print("WebSocket coaching flow OK - type:", data.get("type"))
+
+asyncio.run(test())
+```
+
+```bash
+cd backend && python3 test_websocket.py
+```
+
+---
+
+### 7. Frontend type check
+
+```bash
+npx tsc --noEmit
+```
+
+Expected: no output (zero TypeScript errors).
+
+---
+
+### 8. Frontend lint
+
+```bash
+npm run lint
+```
+
+Expected: `No ESLint warnings or errors.`
+
+---
+
+### 9. Manual end-to-end checklist
+
+Run these steps in a browser after both servers are running:
+
+| # | Step | Expected Result |
+|---|------|----------------|
+| 1 | Open http://localhost:3000 | Landing page loads; three mode cards visible |
+| 2 | Click **Tutor** card | Setup dialog opens with topic input field |
+| 3 | Click **Back to Home** in setup dialog | Returns to landing page |
+| 4 | Re-open Tutor, type a topic, click **Start Session** | Coaching interface loads |
+| 5 | Grant microphone permission when prompted | Mic permission row shows "Granted" |
+| 6 | Skip camera permission | Camera row shows "Skipped" |
+| 7 | Speak a question about your topic | AI responds with a numbered step; avatar mouth animates |
+| 8 | Click the **Public Speaking** card | Correct mode loads |
+| 9 | Click the **Interview Prep** card | Correct mode loads |
+| 10 | Scroll the home page | Scroll is smooth with no jank |
+| 11 | Verify AI voice | Voice is female (Samantha / Zira / Neural2-F) |
+
+---
+
 ## License
 
 MIT
@@ -205,5 +408,3 @@ MIT
 
 - Google Gemini
 - Ready Player Me
-
-# socratic_mirror
