@@ -1,0 +1,106 @@
+# Cloud Build – deploy backend + frontend to Cloud Run
+#
+# Required substitutions (set in Cloud Build trigger or via --substitutions):
+#   _REGION          e.g. us-central1
+#   _PROJECT_ID      your GCP project ID
+#
+# One-time setup:
+#   gcloud services enable run.googleapis.com cloudbuild.googleapis.com
+#   gcloud projects add-iam-policy-binding $_PROJECT_ID \
+#     --member="serviceAccount:$(gcloud projects describe $_PROJECT_ID \
+#       --format='value(projectNumber)')@cloudbuild.gserviceaccount.com" \
+#     --role="roles/run.admin"
+
+substitutions:
+  _REGION: us-central1
+  _PROJECT_ID: your-gcp-project-id
+  _IMAGE_TAG: latest
+
+steps:
+  # ── Backend ───────────────────────────────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: build-backend
+    args:
+      - build
+      - -t
+      - gcr.io/$_PROJECT_ID/socratic-mirror-backend:$_IMAGE_TAG
+      - ./backend
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-backend
+    waitFor: [build-backend]
+    args:
+      - push
+      - gcr.io/$_PROJECT_ID/socratic-mirror-backend:$_IMAGE_TAG
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy-backend
+    waitFor: [push-backend]
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - socratic-mirror-backend
+      - --image=gcr.io/$_PROJECT_ID/socratic-mirror-backend:$_IMAGE_TAG
+      - --region=$_REGION
+      - --platform=managed
+      - --allow-unauthenticated
+      - --remove-env-vars=GEMINI_API_KEY
+      - --set-secrets=GEMINI_API_KEY=gemini-api-key:latest
+      - --min-instances=0
+      - --max-instances=1
+      - --timeout=300
+
+  # ── Frontend ──────────────────────────────────────────────────────────────
+  # Capture backend URL so frontend can bake it in at build time
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: get-backend-url
+    waitFor: [deploy-backend]
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        URL=$(gcloud run services describe socratic-mirror-backend \
+          --region=$_REGION --format='value(status.url)')
+        echo "$$URL" > /workspace/backend_url.txt
+        echo "Backend URL: $$URL"
+
+  - name: gcr.io/cloud-builders/docker
+    id: build-frontend
+    waitFor: [get-backend-url]
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        BACKEND_URL=$(cat /workspace/backend_url.txt)
+        docker build \
+          --build-arg NEXT_PUBLIC_BACKEND_URL=$$BACKEND_URL \
+          -t gcr.io/$_PROJECT_ID/socratic-mirror-frontend:$_IMAGE_TAG \
+          .
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-frontend
+    waitFor: [build-frontend]
+    args:
+      - push
+      - gcr.io/$_PROJECT_ID/socratic-mirror-frontend:$_IMAGE_TAG
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy-frontend
+    waitFor: [push-frontend]
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - socratic-mirror-frontend
+      - --image=gcr.io/$_PROJECT_ID/socratic-mirror-frontend:$_IMAGE_TAG
+      - --region=$_REGION
+      - --platform=managed
+      - --allow-unauthenticated
+      - --min-instances=0
+      - --max-instances=1
+      - --timeout=60
+
+images:
+  - gcr.io/$_PROJECT_ID/socratic-mirror-backend:$_IMAGE_TAG
+  - gcr.io/$_PROJECT_ID/socratic-mirror-frontend:$_IMAGE_TAG
