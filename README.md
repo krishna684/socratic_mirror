@@ -205,3 +205,5 @@ MIT
 
 - Google Gemini
 - Ready Player Me
+
+# socratic_mirror
