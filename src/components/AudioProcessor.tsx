@@ -449,7 +449,7 @@ export default function AudioProcessor({
             const normalizedVolume = Math.min(100, (rms / 128) * 100);
             setVolume(normalizedVolume);
 
-            const VAD_THRESHOLD = 8;
+            const VAD_THRESHOLD = 20;
             const speaking = rms > VAD_THRESHOLD && !isAiSpeakingRef.current; // Direct isolation
             setIsUserSpeaking(speaking);
 

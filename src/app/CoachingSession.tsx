@@ -446,9 +446,12 @@ export default function CoachingSession({ mode, sessionId, onExit }: CoachingSes
         }
 
         if (item.kind === 'text') {
+            // Mark speaking BEFORE the TTS request so the mic VAD is blocked
+            // during the HTTP round-trip — prevents barge-in before audio starts.
+            setAvatarState(prev => ({ ...prev, isSpeaking: true }));
             await speakWithVisemes(
                 item.text,
-                () => setAvatarState(prev => ({ ...prev, isSpeaking: true })),
+                undefined,
                 () => setAvatarState(prev => ({ ...prev, isSpeaking: false })),
             );
         }
