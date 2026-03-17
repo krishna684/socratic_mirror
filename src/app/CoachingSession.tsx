@@ -276,8 +276,16 @@ export default function CoachingSession({ mode, sessionId, onExit }: CoachingSes
 
     const enqueueNarrationFromMessage = (message: any): boolean => {
         const text = message?.narration || message?.voice_text || message?.text;
-        if (text) {
-            return enqueueNarrationItem({ kind: 'text', text: String(text) });
+        if (text && String(text).trim()) {
+            return enqueueNarrationItem({ kind: 'text', text: String(text).trim() });
+        }
+        // Fallback: if the message has no speakable text, say something neutral
+        // so the user isn't left with silent "thinking → listen" with no response.
+        const fallback = message?.error
+            ? 'Sorry, I ran into an issue. Please try again.'
+            : null;
+        if (fallback) {
+            return enqueueNarrationItem({ kind: 'text', text: fallback });
         }
         return false;
     };

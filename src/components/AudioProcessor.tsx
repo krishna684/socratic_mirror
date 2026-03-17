@@ -185,7 +185,7 @@ export default function AudioProcessor({
     const lastCommittedUtteranceRef = useRef('');
     const lastCommitAtRef = useRef(0);
     const idleCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const MIN_UTTERANCE_CHARS_DEFAULT = 2;
+    const MIN_UTTERANCE_CHARS_DEFAULT = 3;
     const SILENCE_MS_TO_COMMIT_DEFAULT = 2000;
     const COMMIT_DEDUP_WINDOW_MS = 2000;
     const IDLE_RESULT_COMMIT_MS_DEFAULT = 1500;
@@ -301,18 +301,12 @@ export default function AudioProcessor({
                     if (currentTranscript) {
                         setTranscript(currentTranscript);
                         transcriptRef.current = currentTranscript;
+                        // Always let the silence timer decide when to commit.
+                        // The old fast-path fired instantly on isFinal=true, cutting
+                        // off users mid-sentence (e.g. "yes" committed before they
+                        // could continue with "yes but can you explain more").
                         scheduleIdleCommit();
                     } else {
-                        clearIdleCommitTimer();
-                    }
-
-                    // Fast-path commit for short interview answers when the recognizer finalizes quickly.
-                    const finalized = finalTranscript.trim();
-                    if (finalized && !interimTranscript.trim() && finalized.length >= minUtteranceCharsRef.current) {
-                        commitUtterance(finalized);
-                        setTranscript('');
-                        transcriptRef.current = '';
-                        silenceStartRef.current = null;
                         clearIdleCommitTimer();
                     }
                 };
