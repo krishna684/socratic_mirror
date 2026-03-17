@@ -8,6 +8,7 @@ import asyncio
 from datetime import datetime, timedelta
 import uuid
 import os
+import time
 
 
 class SessionManager:
@@ -16,6 +17,9 @@ class SessionManager:
     def __init__(self, storage_path: str = "./sessions"):
         self.storage_path = storage_path
         self.active_sessions: Dict[str, Dict] = {}
+        # Debounce session saves: only write if > 5s since last write for that session
+        self._last_save_time: Dict[str, float] = {}
+        self._pending_save: Dict[str, bool] = {}
         os.makedirs(storage_path, exist_ok=True)
         self._cleanup_old_sessions()
         
@@ -116,8 +120,8 @@ class SessionManager:
         if len(session["context_history"]) > 50:
             session = await self._compress_context(session)
             
-        await self._save_session(session_id)
-        
+        await self._save_session(session_id, force=True)
+
     async def add_interaction(self, session_id: str, interaction: Dict):
         """Add interaction to session history"""
         if session_id not in self.active_sessions:
@@ -240,16 +244,30 @@ class SessionManager:
                     topics.append(words[0])
         return list(set(topics))[:5]
         
-    async def _save_session(self, session_id: str):
-        """Persist session to disk"""
+    async def _save_session(self, session_id: str, force: bool = False):
+        """Persist session to disk (debounced + offloaded to thread pool)."""
         if session_id not in self.active_sessions:
             return
-            
-        session = self.active_sessions[session_id]
+
+        now = time.monotonic()
+        last = self._last_save_time.get(session_id, 0)
+
+        # Skip if saved recently and not forced (e.g. end_session)
+        if not force and now - last < 5.0:
+            self._pending_save[session_id] = True
+            return
+
+        self._last_save_time[session_id] = now
+        self._pending_save[session_id] = False
+
+        session_data = self.active_sessions[session_id]
         session_file = os.path.join(self.storage_path, f"{session_id}.json")
-        
-        with open(session_file, 'w') as f:
-            json.dump(session, f, indent=2)
+
+        def _write():
+            with open(session_file, 'w') as f:
+                json.dump(session_data, f, indent=2)
+
+        await asyncio.to_thread(_write)
 
     def _cleanup_old_sessions(self, max_age_hours: int = 24):
         """Delete session files older than max_age_hours"""

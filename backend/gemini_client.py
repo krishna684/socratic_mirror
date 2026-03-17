@@ -24,6 +24,7 @@ class GeminiClient:
     def __init__(self, api_key: str):
         self.api_key = api_key
         self._preferred_models: Dict[str, Optional[str]] = {"low": None, "high": None}
+        self._model_cache: Dict[str, Any] = {}  # cache model instances by "name:level"
         self._live_client = None
         if api_key:
             genai.configure(api_key=api_key)
@@ -48,12 +49,22 @@ class GeminiClient:
         """Check if API key is configured."""
         return bool(self.api_key)
 
-    def _generation_config(self, thinking_level: str) -> Dict[str, Any]:
+    def _generation_config(self, thinking_level: str, mode: str = "") -> Dict[str, Any]:
+        # Tutoring steps are short (2-3 sentences) — 512 tokens is plenty.
+        # Interview / public_speaking answers can be a bit longer — use 768.
+        # Vibe reports need more room — use 1024.
+        if mode == "tutoring":
+            max_tokens = 512
+        elif mode in ("interview", "public_speaking"):
+            max_tokens = 768
+        else:
+            max_tokens = 1024
         return {
             "temperature": 0.7 if thinking_level == "low" else 0.4,
             "top_p": 0.95,
             "top_k": 40,
-            "max_output_tokens": 2048,
+            "max_output_tokens": max_tokens,
+            "response_mime_type": "application/json",
         }
 
     def _normalize_model_name(self, model_name: str) -> str:
@@ -95,11 +106,14 @@ class GeminiClient:
                 deduped.append(model_name)
         return deduped
 
-    def _create_model(self, model_name: str, thinking_level: str = "low"):
-        return genai.GenerativeModel(
-            model_name=self._normalize_model_name(model_name),
-            generation_config=self._generation_config(thinking_level),
-        )
+    def _create_model(self, model_name: str, thinking_level: str = "low", mode: str = ""):
+        cache_key = f"{model_name}:{thinking_level}:{mode}"
+        if cache_key not in self._model_cache:
+            self._model_cache[cache_key] = genai.GenerativeModel(
+                model_name=self._normalize_model_name(model_name),
+                generation_config=self._generation_config(thinking_level, mode),
+            )
+        return self._model_cache[cache_key]
 
     def get_model(self, thinking_level: str = "low"):
         """Return a best-effort model instance for callers that need a model object."""
@@ -128,12 +142,13 @@ class GeminiClient:
         prompt: str,
         thinking_level: str = "low",
         safety_settings: Optional[List[Dict[str, str]]] = None,
+        mode: str = "",
     ):
         last_error: Optional[Exception] = None
 
         for model_name in self._candidate_models(thinking_level):
             try:
-                model = self._create_model(model_name, thinking_level)
+                model = self._create_model(model_name, thinking_level, mode)
                 if safety_settings:
                     response = await asyncio.to_thread(
                         model.generate_content,
@@ -467,6 +482,7 @@ Always return JSON with:
                 full_prompt,
                 thinking_level="low",
                 safety_settings=safety_settings,
+                mode=mode,
             )
             text = getattr(response, "text", "") or ""
 
