@@ -52,3 +52,4 @@ backend/*.sqlite3
 *.swp
 *.swo
 studentsafety-companion
+.claude/
