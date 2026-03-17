@@ -78,25 +78,23 @@ const styles = {
         width: '4px',
         minHeight: '30%',
         background: 'linear-gradient(180deg, #FCD34D, #FBBF24)',
-        borderRadius: '1rem',
-        transition: 'height 0.1s ease-out',
+        borderRadius: '2px',
+        transition: 'height 0.1s ease',
     },
     progressBar: {
         width: '100%',
-        height: '8px',
-        background: 'rgba(255, 255, 255, 0.08)',
-        borderRadius: '1rem',
+        height: '4px',
+        background: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: '9999px',
         overflow: 'hidden',
-        marginBottom: '1rem',
     },
     progressFill: {
         height: '100%',
-        background: 'linear-gradient(90deg, #FBBF24, #FCD34D)',
-        borderRadius: '1rem',
-        transition: 'width 0.3s ease',
+        background: 'linear-gradient(90deg, #FBBF24, #F59E0B)',
+        borderRadius: '9999px',
+        transition: 'width 0.15s ease',
     },
     button: {
-        width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -155,103 +153,132 @@ const styles = {
     },
 };
 
+// ─── constants ───────────────────────────────────────────────────────────────
+const VAD_INTERVAL_MS = 150;          // volume polling — replaces rAF, much less CPU
+const SILENCE_COMMIT_MS = 1800;       // ms of silence after last speech → commit
+const IDLE_COMMIT_MS = 2000;          // fallback commit after last onresult
+const MIN_CHARS = 3;
+const DEDUP_WINDOW_MS = 2000;
+
 export default function AudioProcessor({
     onAudioEvent,
     isActive = true,
     isAiSpeaking = false,
-    silenceMsToCommit,
-    idleResultCommitMs,
-    minUtteranceChars,
+    silenceMsToCommit = SILENCE_COMMIT_MS,
+    idleResultCommitMs = IDLE_COMMIT_MS,
+    minUtteranceChars = MIN_CHARS,
 }: AudioProcessorProps) {
-    const [isListening, setIsListening] = useState(isActive);
+    const [isListening, setIsListening] = useState(false);
     const [isUserSpeaking, setIsUserSpeaking] = useState(false);
     const [transcript, setTranscript] = useState('');
-    const [hasPermission, setHasPermission] = useState(false);
+    const [hasPermission, setHasPermission] = useState<boolean | null>(null); // null = not yet asked
     const [volume, setVolume] = useState(0);
     const [waveHeights, setWaveHeights] = useState([30, 30, 30, 30, 30]);
+
+    // Refs that closures can always read fresh values from
+    const onEventRef = useRef(onAudioEvent);
+    const isActiveRef = useRef(isActive);
+    const isAiSpeakingRef = useRef(isAiSpeaking);
+    const silenceMsRef = useRef(silenceMsToCommit);
+    const idleMsRef = useRef(idleResultCommitMs);
+    const minCharsRef = useRef(minUtteranceChars);
 
     const recognitionRef = useRef<any>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
-    const animationRef = useRef<number | null>(null);
+
+    // Transcript accumulation
     const transcriptRef = useRef('');
-    const silenceStartRef = useRef<number | null>(null);
-    const vadLoopRunningRef = useRef(false);
-    const isActiveRef = useRef(isActive);
-    const isListeningRef = useRef(isActive);
-    const hasPermissionRef = useRef(false);
-    const isAiSpeakingRef = useRef(isAiSpeaking);
-    const lastCommittedUtteranceRef = useRef('');
-    const lastCommitAtRef = useRef(0);
-    const idleCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const MIN_UTTERANCE_CHARS_DEFAULT = 3;
-    const SILENCE_MS_TO_COMMIT_DEFAULT = 2000;
-    const COMMIT_DEDUP_WINDOW_MS = 2000;
-    const IDLE_RESULT_COMMIT_MS_DEFAULT = 1500;
-    const minUtteranceCharsRef = useRef(minUtteranceChars ?? MIN_UTTERANCE_CHARS_DEFAULT);
-    const silenceMsToCommitRef = useRef(silenceMsToCommit ?? SILENCE_MS_TO_COMMIT_DEFAULT);
-    const idleResultCommitMsRef = useRef(idleResultCommitMs ?? IDLE_RESULT_COMMIT_MS_DEFAULT);
+    const lastCommitRef = useRef({ text: '', at: 0 });
+
+    // Timers
+    const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const volumeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const lastSpeechAtRef = useRef(0);
 
-    useEffect(() => {
-        transcriptRef.current = transcript;
-    }, [transcript]);
+    // Keep all refs current every render
+    useEffect(() => { onEventRef.current = onAudioEvent; }, [onAudioEvent]);
+    useEffect(() => { isActiveRef.current = isActive; }, [isActive]);
+    useEffect(() => { isAiSpeakingRef.current = isAiSpeaking; }, [isAiSpeaking]);
+    useEffect(() => { silenceMsRef.current = silenceMsToCommit; }, [silenceMsToCommit]);
+    useEffect(() => { idleMsRef.current = idleResultCommitMs; }, [idleResultCommitMs]);
+    useEffect(() => { minCharsRef.current = minUtteranceChars; }, [minUtteranceChars]);
 
-    useEffect(() => {
-        isActiveRef.current = isActive;
-    }, [isActive]);
+    // ── helpers ──────────────────────────────────────────────────────────────
 
-    useEffect(() => {
-        isListeningRef.current = isListening;
-    }, [isListening]);
+    const clearTimers = () => {
+        if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+        if (idleTimerRef.current) { clearTimeout(idleTimerRef.current); idleTimerRef.current = null; }
+    };
 
-    useEffect(() => {
-        hasPermissionRef.current = hasPermission;
-    }, [hasPermission]);
+    const commitUtterance = (text: string) => {
+        const clean = text.trim().replace(/\s+/g, ' ');
+        if (clean.length < minCharsRef.current) return;
+        const now = Date.now();
+        if (lastCommitRef.current.text === clean && now - lastCommitRef.current.at < DEDUP_WINDOW_MS) return;
+        lastCommitRef.current = { text: clean, at: now };
+        transcriptRef.current = '';
+        setTranscript('');
+        clearTimers();
+        onEventRef.current({ kind: 'utterance', text: clean });
+    };
 
-    useEffect(() => {
-        isAiSpeakingRef.current = isAiSpeaking;
-    }, [isAiSpeaking]);
+    const scheduleIdleCommit = () => {
+        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = setTimeout(() => {
+            if (!isActiveRef.current || isAiSpeakingRef.current) return;
+            const t = transcriptRef.current.trim();
+            if (t) commitUtterance(t);
+        }, idleMsRef.current);
+    };
 
-    useEffect(() => {
-        minUtteranceCharsRef.current = minUtteranceChars ?? MIN_UTTERANCE_CHARS_DEFAULT;
-    }, [minUtteranceChars]);
+    // ── volume polling (setInterval, not rAF) ────────────────────────────────
 
-    useEffect(() => {
-        silenceMsToCommitRef.current = silenceMsToCommit ?? SILENCE_MS_TO_COMMIT_DEFAULT;
-    }, [silenceMsToCommit]);
+    const startVolumePolling = () => {
+        if (volumeIntervalRef.current) return;
+        volumeIntervalRef.current = setInterval(() => {
+            if (!analyserRef.current) return;
+            const buf = new Uint8Array(analyserRef.current.frequencyBinCount);
+            analyserRef.current.getByteFrequencyData(buf);
+            const rms = Math.sqrt(buf.reduce((a, v) => a + v * v, 0) / buf.length);
+            const vol = Math.min(100, (rms / 128) * 100);
+            setVolume(vol);
 
-    useEffect(() => {
-        idleResultCommitMsRef.current = idleResultCommitMs ?? IDLE_RESULT_COMMIT_MS_DEFAULT;
-    }, [idleResultCommitMs]);
+            const speaking = rms > 18 && !isAiSpeakingRef.current;
+            setIsUserSpeaking(speaking);
 
-    useEffect(() => {
-        setIsListening(isActive);
-        if (isActive) {
-            if (recognitionRef.current && !isListening) {
-                try { recognitionRef.current.start(); } catch (e) { }
+            if (speaking) {
+                lastSpeechAtRef.current = Date.now();
+                // cancel silence timer while user is actively speaking
+                if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+                onEventRef.current({ kind: 'activity', isSpeaking: true });
+            } else {
+                const silentFor = Date.now() - lastSpeechAtRef.current;
+                if (lastSpeechAtRef.current > 0 && silentFor > silenceMsRef.current && transcriptRef.current.trim()) {
+                    // user has been silent long enough — commit
+                    const t = transcriptRef.current.trim();
+                    lastSpeechAtRef.current = 0;
+                    commitUtterance(t);
+                } else {
+                    onEventRef.current({ kind: 'activity', isSpeaking: false });
+                }
             }
-            if (!vadLoopRunningRef.current) {
-                monitorVoiceActivity();
-            }
-        } else {
-            clearIdleCommitTimer();
-            if (recognitionRef.current) {
-                try { recognitionRef.current.stop(); } catch (e) { }
-            }
-            vadLoopRunningRef.current = false;
-        }
-    }, [isActive]);
+        }, VAD_INTERVAL_MS);
+    };
 
-    useEffect(() => {
-        initializeSpeechRecognition();
-        return cleanup;
-    }, []);
+    const stopVolumePolling = () => {
+        if (volumeIntervalRef.current) { clearInterval(volumeIntervalRef.current); volumeIntervalRef.current = null; }
+        setVolume(0);
+        setIsUserSpeaking(false);
+    };
+
+    // ── waveform animation (only while sound detected) ───────────────────────
 
     useEffect(() => {
         if (isUserSpeaking || isAiSpeaking) {
-            const interval = setInterval(() => {
+            const iv = setInterval(() => {
                 setWaveHeights([
                     Math.random() * 70 + 30,
                     Math.random() * 70 + 30,
@@ -260,258 +287,151 @@ export default function AudioProcessor({
                     Math.random() * 70 + 30,
                 ]);
             }, 100);
-            return () => clearInterval(interval);
+            return () => clearInterval(iv);
         } else {
             setWaveHeights([30, 30, 30, 30, 30]);
         }
     }, [isUserSpeaking, isAiSpeaking]);
 
-    const initializeSpeechRecognition = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            streamRef.current = stream;
-            setHasPermission(true);
+    // ── speech recognition ───────────────────────────────────────────────────
 
-            setupAudioAnalysis(stream);
+    const startRecognition = () => {
+        if (!recognitionRef.current) return;
+        try { recognitionRef.current.start(); } catch (_) { /* already running */ }
+    };
 
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-                const recognition = new SpeechRecognition();
+    const stopRecognition = () => {
+        if (!recognitionRef.current) return;
+        try { recognitionRef.current.stop(); } catch (_) { }
+    };
 
-                recognition.continuous = true;
-                recognition.interimResults = true;
-                recognition.lang = 'en-US';
+    const buildRecognition = () => {
+        const SR = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        if (!SR) return null;
+        const r = new SR();
+        r.continuous = true;
+        r.interimResults = true;
+        r.lang = 'en-US';
 
-                recognition.onresult = (event: any) => {
-                    let interimTranscript = '';
-                    let finalTranscript = '';
-
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        const result = event.results?.[i];
-                        const transcriptText = result?.[0]?.transcript || '';
-                        if (!transcriptText) continue;
-                        if (result?.isFinal) {
-                            finalTranscript += transcriptText + ' ';
-                        } else {
-                            interimTranscript += transcriptText;
-                        }
-                    }
-
-                    const currentTranscript = (finalTranscript + interimTranscript).trim();
-                    if (currentTranscript) {
-                        setTranscript(currentTranscript);
-                        transcriptRef.current = currentTranscript;
-                        // Always let the silence timer decide when to commit.
-                        // The old fast-path fired instantly on isFinal=true, cutting
-                        // off users mid-sentence (e.g. "yes" committed before they
-                        // could continue with "yes but can you explain more").
-                        scheduleIdleCommit();
-                    } else {
-                        clearIdleCommitTimer();
-                    }
-                };
-
-                recognition.onerror = (event: any) => {
-                    const code = event?.error || 'unknown';
-
-                    // Normal transient recognizer states; auto-restart via onend.
-                    if (code === 'aborted' || code === 'no-speech') {
-                        return;
-                    }
-
-                    if (code === 'not-allowed' || code === 'service-not-allowed' || code === 'audio-capture') {
-                        setHasPermission(false);
-                    }
-
-                    onAudioEvent({
-                        kind: 'error',
-                        message: `Speech recognition error: ${code}`,
-                    });
-                };
-
-                recognition.onend = () => {
-                    if (transcriptRef.current.trim()) {
-                        flushTranscriptAsUtterance();
-                    }
-                    if (isListeningRef.current && hasPermissionRef.current && isActiveRef.current) {
-                        try {
-                            recognition.start();
-                        } catch (e) {
-                            console.error("Failed to restart recognition:", e);
-                        }
-                    }
-                };
-
-                recognitionRef.current = recognition;
-
-                // Auto-start listening if possible
-                if (isListening) {
-                    recognition.start();
-                }
-            } else {
-                onAudioEvent({
-                    kind: 'error',
-                    message: 'Speech recognition is not supported in this browser. Use text input as fallback.',
-                });
-                setIsListening(false);
+        r.onresult = (e: any) => {
+            if (!isActiveRef.current) return;
+            let interim = '', final = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const seg = e.results[i]?.[0]?.transcript || '';
+                if (e.results[i]?.isFinal) final += seg + ' ';
+                else interim += seg;
             }
-        } catch (error) {
-            console.error('Microphone access denied:', error);
-            setHasPermission(false);
-            onAudioEvent({
-                kind: 'error',
-                message: 'Microphone permission denied or unavailable.',
-            });
-        }
-    };
-
-    const commitUtterance = (rawText: string) => {
-        const text = String(rawText || '').trim().replace(/\s+/g, ' ');
-        if (text.length < minUtteranceCharsRef.current) return;
-
-        const now = Date.now();
-        const isDuplicate =
-            lastCommittedUtteranceRef.current === text &&
-            now - lastCommitAtRef.current < COMMIT_DEDUP_WINDOW_MS;
-
-        if (isDuplicate) return;
-
-        lastCommittedUtteranceRef.current = text;
-        lastCommitAtRef.current = now;
-        onAudioEvent({ kind: 'utterance', text });
-    };
-
-    const clearIdleCommitTimer = () => {
-        if (idleCommitTimerRef.current) {
-            clearTimeout(idleCommitTimerRef.current);
-            idleCommitTimerRef.current = null;
-        }
-    };
-
-    const flushTranscriptAsUtterance = () => {
-        const finalText = transcriptRef.current.trim();
-        if (finalText.length >= minUtteranceCharsRef.current) {
-            commitUtterance(finalText);
-        }
-        setTranscript('');
-        transcriptRef.current = '';
-        silenceStartRef.current = null;
-        clearIdleCommitTimer();
-    };
-
-    const scheduleIdleCommit = () => {
-        clearIdleCommitTimer();
-        idleCommitTimerRef.current = setTimeout(() => {
-            if (!isActiveRef.current || isAiSpeakingRef.current) return;
-            flushTranscriptAsUtterance();
-        }, idleResultCommitMsRef.current);
-    };
-
-    const setupAudioAnalysis = (stream: MediaStream) => {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const analyser = audioContext.createAnalyser();
-        const microphone = audioContext.createMediaStreamSource(stream);
-
-        analyser.fftSize = 256;
-        microphone.connect(analyser);
-
-        audioContextRef.current = audioContext;
-        analyserRef.current = analyser;
-
-        monitorVoiceActivity();
-    };
-
-    const monitorVoiceActivity = () => {
-        if (!analyserRef.current || !isActiveRef.current || vadLoopRunningRef.current) return;
-
-        vadLoopRunningRef.current = true;
-        const bufferLength = analyserRef.current.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-
-        const checkVAD = () => {
-            if (!analyserRef.current || !isActiveRef.current) {
-                vadLoopRunningRef.current = false;
-                return;
-            }
-
-            analyserRef.current.getByteFrequencyData(dataArray);
-
-            const rms = Math.sqrt(
-                dataArray.reduce((acc, val) => acc + val * val, 0) / bufferLength
-            );
-
-            const normalizedVolume = Math.min(100, (rms / 128) * 100);
-            setVolume(normalizedVolume);
-
-            const VAD_THRESHOLD = 20;
-            const speaking = rms > VAD_THRESHOLD && !isAiSpeakingRef.current; // Direct isolation
-            setIsUserSpeaking(speaking);
-
-            // Silence Detection for Turn-taking
-            if (speaking) {
-                lastSpeechAtRef.current = Date.now();
-                silenceStartRef.current = null;
-                clearIdleCommitTimer();
-                onAudioEvent({ kind: 'activity', isSpeaking: true });
-            } else if (transcriptRef.current.trim()) {
-                if (silenceStartRef.current === null) {
-                    silenceStartRef.current = Date.now();
-                } else if (Date.now() - silenceStartRef.current > silenceMsToCommitRef.current) {
-                    // Turn finished!
-                    flushTranscriptAsUtterance();
-                }
-            } else {
-                onAudioEvent({ kind: 'activity', isSpeaking: false });
-            }
-
-            animationRef.current = requestAnimationFrame(checkVAD);
+            const combined = (final + interim).trim();
+            if (!combined) return;
+            transcriptRef.current = combined;
+            setTranscript(combined);
+            scheduleIdleCommit();
         };
 
-        checkVAD();
+        r.onerror = (e: any) => {
+            const code = e?.error || 'unknown';
+            if (code === 'aborted' || code === 'no-speech') return; // normal, will auto-restart
+            if (code === 'not-allowed' || code === 'service-not-allowed' || code === 'audio-capture') {
+                setHasPermission(false);
+            }
+            onEventRef.current({ kind: 'error', message: `Speech recognition error: ${code}` });
+        };
+
+        r.onend = () => {
+            // flush any pending transcript
+            const t = transcriptRef.current.trim();
+            if (t) commitUtterance(t);
+            // auto-restart while we should be listening
+            if (isActiveRef.current) {
+                try { r.start(); } catch (_) { }
+            }
+        };
+
+        return r;
     };
 
-    const toggleListening = () => {
-        if (!recognitionRef.current) return;
+    // ── microphone setup (runs once on mount) ────────────────────────────────
 
-        if (isListening) {
-            // Flush on stop
-            flushTranscriptAsUtterance();
-            try {
-                recognitionRef.current.stop();
-            } catch (error) {
-                console.error('Error stopping recognition:', error);
-            }
-            setIsListening(false);
-            setTranscript('');
-            transcriptRef.current = '';
-        } else {
-            try {
-                recognitionRef.current.start();
-                setIsListening(true);
-            } catch (error: any) {
-                console.error('Error starting recognition:', error);
-                if (error.message && error.message.includes('already started')) {
+    useEffect(() => {
+        let cancelled = false;
+
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+                streamRef.current = stream;
+                setHasPermission(true);
+
+                const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const analyser = ctx.createAnalyser();
+                analyser.fftSize = 256;
+                ctx.createMediaStreamSource(stream).connect(analyser);
+                audioContextRef.current = ctx;
+                analyserRef.current = analyser;
+
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    onEventRef.current({ kind: 'error', message: 'Speech recognition not supported. Use text input.' });
+                    return;
+                }
+
+                recognitionRef.current = buildRecognition();
+
+                // Start immediately if already active
+                if (isActiveRef.current) {
+                    startRecognition();
+                    startVolumePolling();
                     setIsListening(true);
                 }
-            }
-        }
-    };
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setHasPermission(false);
+                onEventRef.current({ kind: 'error', message: 'Microphone permission denied or unavailable.' });
+            });
 
-    const cleanup = () => {
-        if (recognitionRef.current) {
-            recognitionRef.current.stop();
+        return () => {
+            cancelled = true;
+            clearTimers();
+            stopVolumePolling();
+            stopRecognition();
+            streamRef.current?.getTracks().forEach(t => t.stop());
+            audioContextRef.current?.close();
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // ── react to isActive prop changes ───────────────────────────────────────
+
+    useEffect(() => {
+        if (!recognitionRef.current) return; // mic not ready yet
+
+        if (isActive) {
+            startRecognition();
+            startVolumePolling();
+            setIsListening(true);
+        } else {
+            clearTimers();
+            stopVolumePolling();
+            stopRecognition();
+            setIsListening(false);
+            transcriptRef.current = '';
+            setTranscript('');
         }
-        if (animationRef.current) {
-            cancelAnimationFrame(animationRef.current);
-        }
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-        }
-        if (audioContextRef.current) {
-            audioContextRef.current.close();
-        }
-        clearIdleCommitTimer();
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isActive]);
+
+    // ─── render ──────────────────────────────────────────────────────────────
+
+    if (hasPermission === false) {
+        return (
+            <div style={{ ...styles.card, ...styles.permissionCard }}>
+                <div style={styles.permissionIcon} aria-hidden="true">🎤</div>
+                <p style={styles.permissionText}>
+                    Microphone access is required for voice coaching.
+                    Please allow microphone access in your browser settings.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div style={styles.card}>
@@ -527,7 +447,7 @@ export default function AudioProcessor({
                 </div>
             </div>
 
-            {/* Waveform Visualization */}
+            {/* Waveform */}
             <div style={styles.waveformContainer} aria-hidden="true">
                 {waveHeights.map((height, i) => (
                     <div
@@ -536,24 +456,26 @@ export default function AudioProcessor({
                             ...styles.waveformBar,
                             height: `${height}%`,
                             opacity: (!isUserSpeaking && !isAiSpeaking) ? 0.3 : 1,
-                            background: isAiSpeaking ? 'linear-gradient(180deg, #3B82F6, #2563EB)' : 'linear-gradient(180deg, #FCD34D, #FBBF24)',
+                            background: isAiSpeaking
+                                ? 'linear-gradient(180deg, #3B82F6, #2563EB)'
+                                : 'linear-gradient(180deg, #FCD34D, #FBBF24)',
                         }}
                     />
                 ))}
             </div>
 
-            {/* Volume Meter */}
+            {/* Volume */}
             <div style={{ marginBottom: transcript ? '1rem' : 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#9CA3AF', marginBottom: '0.5rem' }}>
                     <span>Input Level</span>
                     <span>{volume.toFixed(0)}%</span>
                 </div>
                 <div style={styles.progressBar}>
-                    <div style={{ ...styles.progressFill, width: `${volume}%` }}></div>
+                    <div style={{ ...styles.progressFill, width: `${volume}%` }} />
                 </div>
             </div>
 
-            {/* Transcript Display */}
+            {/* Live transcript */}
             {transcript && (
                 <div style={styles.transcript}>
                     <p style={styles.transcriptLabel} id="transcript-label">Live Transcript</p>

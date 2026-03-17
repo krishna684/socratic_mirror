@@ -1,106 +1,239 @@
-## Inspiration
+# 🪞 Socratic Mirror Agent
 
-The best teachers don't lecture — they ask questions. The Socratic method has guided human learning for 2,500 years: instead of giving answers, a good tutor asks *"Why do you think that?"* and *"What would happen if…?"* until the student discovers the answer themselves.
+## 🌟 Inspiration
 
-We wanted to bring that experience into an AI that doesn't just talk *at* you — one that watches your face, hears the hesitation in your voice, and adapts in real time. The idea of a **mirror** is intentional: the system reflects your own understanding back at you, making invisible confusion visible so you can face and fix it.
+The best teachers don’t give answers — they ask questions.
 
-Watching students cram for exams with passive YouTube videos, and seeing interview candidates crumble under pressure despite knowing the material, made the problem concrete. The gap isn't knowledge — it's the lack of a patient, always-available human presence that challenges you just enough. We built that presence.
+For centuries, the **Socratic method** has helped people truly understand concepts by guiding them with questions instead of explanations. But modern learning is mostly passive: videos, notes, and one-way instruction.
 
----
+We noticed a clear gap:
 
-## What it does
+* Students *consume* content but don’t internalize it
+* Interview candidates *know* material but fail under pressure
+* Learners lack a **real-time, adaptive human presence**
 
-**Socratic Mirror Agent** is a multimodal AI coaching platform with three modes:
+So we asked:
 
-### Socratic Tutoring
+> *What if AI didn’t just answer questions — but helped you think?*
 
-You name a topic — *"explain gradient descent"* or *"help me understand recursion"* — and the AI teaches through guided questions rather than monologues. It renders live visual aids (equations, step lists, diagrams, tables) on a whiteboard panel. Every 3–4 steps it checks your understanding with a targeted question. It never repeats itself, and if you signal confusion it re-explains from a different angle.
-
-The teaching follows a deliberate rhythm. For a concept like backpropagation, the AI builds intuition before revealing the full chain rule update:
-
-$$\delta^{(l)} = \left(W^{(l+1)}\right)^T \delta^{(l+1)} \odot \sigma'\!\left(z^{(l)}\right)$$
-
-### Public Speaking Coach
-
-Choose a speech type (persuasive, informative, impromptu), enter your topic, and optionally upload a script. The AI listens, tracks filler words and pacing in real time, then gives structured feedback with specific timestamp references.
-
-### Interview Prep
-
-Paste a job description, optionally upload your resume, and face a realistic interviewer that cycles through background, technical, and behavioral questions with intelligent follow-ups based on your actual answers.
-
-After every session, a **Vibe Report** summarises your performance score, strengths, and areas to improve — printable and exportable.
+That idea became **Socratic Mirror Agent** — an AI that reflects your understanding back at you and helps you improve in real time.
 
 ---
 
-## How we built it
+## 🚀 What it does
 
-The stack spans three layers communicating over a persistent WebSocket connection.
+Socratic Mirror Agent is a **multimodal AI coaching system** with three modes:
 
-**Frontend — Next.js + React Three Fiber**
+### 🧠 Socratic Tutoring
 
-The 3D avatar is a Ready Player Me `.glb` model rigged with Three.js bone controls. Lip-sync is driven by a viseme timeline: the backend returns an array of `{ viseme, time_ms }` events alongside audio, which the avatar renderer replays against `performance.now()` so mouth shapes track syllables precisely.
-
-**Backend — FastAPI + Gemini**
-
-The FastAPI server manages session state and routes two WebSocket message types: `user_speech` (text transcript) and `biometric_data` (heart rate, stress score, engagement). The `CoachingEngine` builds a structured system prompt for the active mode, calls Gemini 2.0 Flash, and returns typed JSON responses (`step`, `check_in`, `response`, `vibe_report`). For live voice mode, a bidirectional Gemini Live API bridge streams audio in 50 ms PCM chunks.
-
-**Agentic tutoring layer — tutor_agent.py**
-
-The most novel piece is the decision engine sitting between the student and the Gemini prompt. It tracks per-session state — confusion count, correct-answer streaks, steps since the last worked example — and emits an action hint:
-
-| Hint | Trigger | Gemini behaviour |
-|---|---|---|
-| `continue` | Normal progress | Next concept step |
-| `re_explain` | 2+ confusion signals | Rephrase with analogy |
-| `provide_example` | 4+ steps without an example | Concrete worked example |
-| `ask_socratic` | High confidence detected | Probe deeper understanding |
-| `suggest_path` | Diverging interest detected | Offer two sub-topics |
-
-The hint is injected into the Gemini system prompt as a directive. The student never sees it — it just feels like a more attentive teacher.
-
-An **IdleEngagementHandler** runs as an `asyncio` background task and fires one of six rotating re-engagement prompts if the student goes silent for 45 seconds.
+* Teaches using **guided questions only (no direct answers)**
+* Adapts to confusion in real time
+* Generates live visual aids (steps, equations, diagrams)
+* Reinforces learning through continuous checks
 
 ---
 
-## Challenges we ran into
+### 🎤 Public Speaking Coach
 
-**GPU compositing and scroll jank.** Animating three large background orbs with `filter: blur(80px)` forced the browser to repaint every frame at CPU cost, making the page feel like it was about to crash. The fix: remove the filter entirely. `radial-gradient` is already visually soft, and `will-change: transform` + `transform: translateZ(0)` lets the GPU compositor move elements without any per-frame repaint. Removing `backdrop-filter: blur()` from every card saved seven more compositor layers per frame.
+* Real-time feedback on:
 
-**Voice gender.** The `SpeechSynthesisVoice` API exposes no `.gender` property. The TTS fallback kept selecting a male system default. We solved it with a name-pattern match across all known female voices on macOS (Samantha, Karen, Moira), Windows (Zira, Hazel), and Chrome/Edge (Aria, Jenny, Nova), plus `pitch: 1.15` as a last resort.
-
-**Viseme timing drift.** If you load the viseme timeline at `fetch()` time, network and decode latency push mouth shapes ahead of the audio. Setting the timeline origin inside `audio.addEventListener('play')` — at the moment sound actually starts — eliminated drift entirely.
-
-**Ambient audio false positives.** The live audio bridge initially sent every sound (keyboard clicks, background TV, passing cars) to Gemini. We added an `AudioClassifier` that computes RMS energy on raw 16-bit PCM:
-
-$$E_{\text{RMS}} = \sqrt{\frac{1}{N}\sum_{i=0}^{N-1} x_i^2}$$
-
-Chunks below threshold 250 are dropped as silence; 250–900 are classified as background noise. Above 900, a `SpeechIntentAnalyzer` determines whether the utterance is actually directed at the AI before it reaches the coaching engine.
+  * filler words
+  * pacing
+  * delivery
+* Timestamped improvement suggestions
 
 ---
 
-## Accomplishments that we are proud of
+### 💼 Interview Prep
 
-- **Agentic tutoring loop** that genuinely adapts to the student's confusion level — the mechanism is invisible, it just feels like a more attentive teacher.
-- **Sub-frame viseme sync**: mouth shapes track syllables with no perceptible drift even on a 300 ms round-trip connection.
-- **Zero-jank landing page** running at a consistent 60 fps on integrated graphics after the GPU compositing fix.
-- **Granular permission UX**: per-device (mic / camera) allow/skip dialogs with live status badges — students who decline camera still get a full tutoring session.
-- End-to-end **bidirectional live audio pipeline**: PCM capture to AudioWorklet to WebSocket to Gemini Live to audio decode to viseme playback, built in a hackathon timeframe.
+* AI interviewer that adapts based on your answers
+* Covers:
 
----
-
-## What we learned
-
-- **The Socratic method is hard to fake.** Making an AI withhold answers and ask leading questions requires explicit prompt engineering — Gemini's default instinct is to be helpful by explaining. The personality layer and action hints were necessary to override that bias.
-- **Browser performance is about compositor layers, not just code.** A single `filter: blur()` on an animated element can cost more than hundreds of lines of JavaScript.
-- **Agentic state machines beat prompt-only approaches.** Tracking confusion_count in Python and injecting it as a structured hint keeps Gemini on-task far more reliably than asking Gemini to self-monitor its own teaching behaviour.
-- **The Web Speech API is deceptively inconsistent** — voice selection, timing events, and onend reliability vary significantly between Chrome, Edge, and Safari.
+  * behavioral
+  * technical
+  * follow-up questions
+* Uses job description + resume context
 
 ---
 
-## What's next for Socratic Mirror Agent
+### 📊 Vibe Report
 
-- **Visual confusion detection** — feed webcam-detected expressions (furrowed brows, gaze breaks) directly into the decision engine alongside speech patterns.
-- **Persistent learning profiles** — track mastered concepts across sessions and auto-skip them in future sessions on the same topic.
-- **Collaborative mode** — two students, one AI moderator running a live Socratic dialogue between them.
-- **Curriculum generation** — given a learning goal such as "understand transformer architecture", the agent generates and sequences a multi-session curriculum rather than treating each session independently.
-- **LMS integration** — export session transcripts and Vibe Reports to Canvas, Moodle, or Google Classroom as assignment evidence.
+After each session:
+
+* Performance score
+* Strengths & weaknesses
+* Actionable improvements
+
+---
+
+## 🛠️ How we built it
+
+### ⚙️ Architecture Overview
+
+**Frontend**
+
+* Next.js + React + React Three Fiber
+* 3D avatar (Ready Player Me) with real-time lip sync
+
+**Backend**
+
+* FastAPI + Gemini 2.0 Flash
+* WebSocket-based streaming system
+
+**Live Audio Pipeline**
+
+```
+User Voice → AudioWorklet → WebSocket → Gemini Live API  
+→ AI Response + Viseme Timeline → Avatar Lip Sync
+```
+
+---
+
+### 🧩 Agentic Tutoring Engine (Core Innovation)
+
+We built a **state-driven decision engine** that tracks:
+
+* Confusion signals
+* Correct answer streaks
+* Progress depth
+
+Instead of relying on prompting alone, we inject **hidden behavioral hints** into the model:
+
+| Hint            | Trigger            | Result                |
+| --------------- | ------------------ | --------------------- |
+| re_explain      | Confusion detected | New explanation style |
+| provide_example | No example yet     | Adds concrete example |
+| ask_socratic    | High confidence    | Deeper probing        |
+| suggest_path    | Topic drift        | Guided exploration    |
+
+👉 This makes the AI feel like a *real adaptive tutor*, not a chatbot.
+
+---
+
+### 🗣️ Live Agents
+
+Focus: **Real-time interaction (Audio/Vision)**.
+
+We built an interruptible live agent that users can talk to naturally, including barge-in interruptions.
+
+* Supports **natural voice conversation** over streaming WebSockets
+* Handles **interruptions gracefully** during AI speech
+* Uses **vision input** so the tutor can react to what the user is showing in camera frames (for example, homework or notes)
+* Enables use cases like:
+
+  * real-time translator patterns
+  * vision-enabled tutoring
+  * voice customer support interaction
+
+**Mandatory tech requirement satisfied:**
+
+* Uses **Gemini Live API** for real-time bidirectional audio/vision interaction
+
+**Hosting requirement satisfied:**
+
+* Agents are hosted on **Google Cloud** (Cloud Run deployment via Cloud Build)
+
+---
+
+### 🎯 Real-Time Multimodal Inputs
+
+* Voice (speech + tone)
+* Optional biometric signals (stress, engagement)
+* Future-ready for facial expression analysis
+
+---
+
+## ⚡ Challenges we ran into
+
+### 🚨 Performance Issues
+
+* CSS blur effects caused full CPU repaints
+* Fixed by shifting to GPU-friendly transforms
+* Result: **stable 60 FPS UI**
+
+---
+
+### 👄 Lip-Sync Drift
+
+* Audio and visemes were misaligned
+* Fixed by syncing timeline to actual audio playback start
+* Result: **frame-accurate lip sync**
+
+---
+
+### 🎙️ Voice System Limitations
+
+* No gender metadata in Web Speech API
+* Solved using cross-platform voice name mapping
+
+---
+
+### 🔇 Noise Handling
+
+* Background sounds interfered with AI input
+* Added:
+
+  * RMS-based filtering
+  * Intent detection
+
+---
+
+## 🏆 Accomplishments that we’re proud of
+
+* Built a **true Socratic AI** (not just Q&A)
+* Real-time **bidirectional voice + animation pipeline**
+* Sub-frame accurate avatar lip sync
+* Smooth UI performance even on low-end devices
+* Fully working **multimodal coaching system** in hackathon timeframe
+
+---
+
+## 📚 What we learned
+
+* LLMs default to explaining — not guiding
+  → Requires **explicit behavioral control systems**
+
+* Prompting alone isn’t enough
+  → **State + logic + prompts = real intelligence**
+
+* Browser performance is often about **rendering layers**, not code
+
+* Real-time AI systems require careful handling of:
+
+  * latency
+  * synchronization
+  * noise filtering
+
+---
+
+## 🔮 What’s next
+
+* 👁️ Facial expression–based confusion detection
+* 🧠 Persistent learning profiles
+* 👥 Multi-user collaborative learning mode
+* 📖 Auto-generated learning curricula
+* 🏫 LMS integrations (Canvas, Moodle, Google Classroom)
+
+---
+
+## 💡 Why it matters
+
+Socratic Mirror Agent shifts AI from:
+
+> ❌ Answer machine → ✅ Thinking partner
+
+Instead of replacing learning, it **amplifies how humans learn best** —
+through questioning, reflection, and discovery.
+
+
+## 🧑‍💻 Built With
+
+* Next.js
+* React
+* Three.js / React Three Fiber
+* FastAPI
+* Gemini 2.0 Flash (Google AI)
+* WebSockets
+* Web Audio API
+
+---
