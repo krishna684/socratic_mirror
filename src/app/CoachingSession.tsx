@@ -246,7 +246,10 @@ export default function CoachingSession({ mode, sessionId, onExit }: CoachingSes
         }
 
         try {
-            if (opts?.setThink) setSessionState('THINK');
+            if (opts?.setThink) {
+                setSessionState('THINK');
+                setCheckInOptions([]);
+            }
             ws.send(JSON.stringify(payload));
             if (!opts?.silentFailure) setVoiceInputError(null);
             return true;
@@ -459,6 +462,16 @@ export default function CoachingSession({ mode, sessionId, onExit }: CoachingSes
         isProcessingQueueRef.current = false;
         if (narrationQueueRef.current.length === 0) {
             setSessionState('LISTEN');
+            // For tutoring: always show check-in after every explanation finishes
+            if (mode === 'tutoring') {
+                setCheckInOptions([
+                    'Go deeper',
+                    'Show an example',
+                    'I have a doubt',
+                    'Try a practice problem',
+                    'Move on',
+                ]);
+            }
         } else {
             processNarrationQueue();
         }

@@ -186,9 +186,9 @@ export default function AudioProcessor({
     const lastCommitAtRef = useRef(0);
     const idleCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const MIN_UTTERANCE_CHARS_DEFAULT = 2;
-    const SILENCE_MS_TO_COMMIT_DEFAULT = 500;
+    const SILENCE_MS_TO_COMMIT_DEFAULT = 2000;
     const COMMIT_DEDUP_WINDOW_MS = 2000;
-    const IDLE_RESULT_COMMIT_MS_DEFAULT = 700;
+    const IDLE_RESULT_COMMIT_MS_DEFAULT = 1500;
     const minUtteranceCharsRef = useRef(minUtteranceChars ?? MIN_UTTERANCE_CHARS_DEFAULT);
     const silenceMsToCommitRef = useRef(silenceMsToCommit ?? SILENCE_MS_TO_COMMIT_DEFAULT);
     const idleResultCommitMsRef = useRef(idleResultCommitMs ?? IDLE_RESULT_COMMIT_MS_DEFAULT);
