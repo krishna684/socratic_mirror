@@ -25,7 +25,7 @@ from coaching_engine import CoachingEngine
 from session_manager import SessionManager
 from live_session import run_live_session
 from tts_service import create_tts_service
-from tutor_agent import IdleEngagementHandler, SpeechIntentAnalyzer
+from tutor_agent import IdleEngagementHandler
 
 # Load environment variables
 load_dotenv()
@@ -243,13 +243,6 @@ async def coaching_websocket(websocket: WebSocket, session_id: str):
                             "message": "Empty transcript received"
                         })
                         continue
-
-                    # For tutoring mode: filter out speech not directed at the tutor
-                    if session.get("mode") == "tutoring":
-                        intent = SpeechIntentAnalyzer.classify(transcript)
-                        if intent == "HUMAN_SPEECH_AMBIENT":
-                            # Side conversation detected — ignore silently
-                            continue
 
                     response = await coaching_engine.process_text(
                         session_id=session_id,
