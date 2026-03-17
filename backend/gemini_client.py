@@ -61,50 +61,33 @@ class GeminiClient:
             return model_name
         return f"models/{model_name}"
 
-    def _discover_models(self) -> List[str]:
-        discovered: List[str] = []
-        try:
-            for model in genai.list_models():
-                name = model.name.replace("models/", "")
-                methods = getattr(model, "supported_generation_methods", []) or []
-                if "generateContent" in methods and name.startswith("gemini") and "image" not in name:
-                    discovered.append(name)
-        except Exception as e:
-            print(f"Warning: Could not list Gemini models: {e}")
-        return discovered
+    # Models with very low free-tier quotas that should never be auto-selected.
+    # gemini-3-* has only 20 req/day on the free tier.
+    _LOW_QUOTA_PREFIXES = ("gemini-3",)
 
     def _candidate_models(self, thinking_level: str = "low") -> List[str]:
-        # Free-tier accessible models — reliable fallbacks
-        static_fallback_low = [
-            "gemini-2.5-flash",
+        # Ordered by free-tier generosity:
+        #   gemini-2.0-flash       — 1500 req/day, 15 req/min  (best default)
+        #   gemini-2.0-flash-lite  — 1500 req/day, 30 req/min
+        #   gemini-1.5-flash       — 1500 req/day, 15 req/min
+        #   gemini-1.5-flash-8b    — 1500 req/day, 15 req/min
+        #   gemini-2.5-flash       — lower free quota, try after the above
+        free_tier_models = [
             "gemini-2.0-flash",
             "gemini-2.0-flash-lite",
-        ]
-        static_fallback_high = [
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b",
             "gemini-2.5-flash",
-            "gemini-2.0-flash",
         ]
 
         candidates: List[str] = []
+
+        # Re-use the last working model if it's still in the free-tier list
         preferred = self._preferred_models.get(thinking_level)
-        if preferred:
+        if preferred and not any(preferred.startswith(p) for p in self._LOW_QUOTA_PREFIXES):
             candidates.append(preferred)
 
-        discovered = self._discover_models()
-        if discovered:
-            # Prefer gemini-3 flash/preview if available, but exclude pro-only models
-            # that have limit:0 on free tier
-            gemini3 = [
-                name for name in discovered
-                if name.startswith("gemini-3") and "pro" not in name
-            ]
-            if thinking_level == "high":
-                ranked = sorted(gemini3, key=lambda n: ("flash" in n, n))
-            else:
-                ranked = sorted(gemini3, key=lambda n: ("lite" not in n and "exp" in n, n))
-            candidates.extend(ranked)
-
-        candidates.extend(static_fallback_high if thinking_level == "high" else static_fallback_low)
+        candidates.extend(free_tier_models)
 
         deduped: List[str] = []
         for model_name in candidates:
@@ -134,6 +117,12 @@ class GeminiClient:
             generation_config=self._generation_config(thinking_level),
         )
 
+    @staticmethod
+    def _is_quota_error(e: Exception) -> bool:
+        """Return True if the exception is a 429 / quota-exceeded error."""
+        msg = str(e).lower()
+        return "429" in msg or "quota" in msg or "rate limit" in msg or "resource_exhausted" in msg
+
     async def _generate_with_fallback(
         self,
         prompt: str,
@@ -158,7 +147,13 @@ class GeminiClient:
                 return response
             except Exception as e:
                 last_error = e
-                print(f"Gemini request failed for {model_name}: {e}")
+                if self._is_quota_error(e):
+                    # Clear preferred model so we don't retry the same quota-exceeded one
+                    if self._preferred_models.get(thinking_level) == model_name:
+                        self._preferred_models[thinking_level] = None
+                    print(f"Quota exceeded for {model_name}, trying next model...")
+                else:
+                    print(f"Gemini request failed for {model_name}: {e}")
 
         if last_error:
             raise last_error
