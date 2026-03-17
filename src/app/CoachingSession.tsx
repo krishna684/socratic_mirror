@@ -511,9 +511,22 @@ export default function CoachingSession({ mode, sessionId, onExit }: CoachingSes
                 break;
 
             case 'check_in':
-                applyAvatarFromMessage(message, 'idle');
+                applyAvatarFromMessage(message, 'explaining');
                 setCheckInOptions(message.options || []);
                 setSessionState('SPEAK');
+                // Push to whiteboard if it carries a visual (combined step+check_in)
+                if (message.visual && message.visual.type !== 'none') {
+                    const ciStepId = allocateWhiteboardStepId(
+                        typeof message.step === 'number' ? message.step : undefined
+                    );
+                    setWhiteboardSteps(prev => [...prev, {
+                        id: ciStepId,
+                        subtopic_id: message.subtopic_id,
+                        narration: message.narration,
+                        visual: message.visual,
+                    }]);
+                    setCurrentStepId(ciStepId);
+                }
                 if (!enqueueNarrationFromMessage(message)) {
                     setSessionState('LISTEN');
                 }

@@ -388,11 +388,10 @@ CORE RULES:
 5. LOGICAL STEPS: Break explanations into 1-3 sentence chunks — one idea per step.
 6. MONOTONIC STEPS: Current step is {current_step}. Next step must be >= {current_step + 1}.
 7. FOLLOW-UP: For later turns, answer the MOST RECENT user message directly first, then continue.
-8. CHECK-INS: Every 3-4 steps, emit a check_in to ask if the student wants to continue or see more examples.
+8. CHECK-IN AFTER EVERY STEP: ALWAYS use kind "check_in". Include the explanation in "narration", the visual in "visual", and end with a check-in question. Never return kind "step" — always "check_in".
 
 OUTPUT SCHEMA (Return ONLY raw JSON, no markdown fences):
-- {{"kind": "step", "step": 1, "subtopic_id": "intro", "narration": "..", "visual": {{"type": "equation", "content": ".."}}, "avatar_intent": {{"expression": "..", "gesture": ".."}}}}
-- {{"kind": "check_in", "narration": "..", "options": ["Continue", "Show another example", "Explain differently", "Try a practice problem"], "step": 5}}
+- {{"kind": "check_in", "step": 1, "subtopic_id": "intro", "narration": "<explanation here>. Do you want to go deeper, see an example, or do you have any doubts?", "visual": {{"type": "equation", "content": ".."}}, "options": ["Go deeper", "Show an example", "I have a doubt", "Try a practice problem", "Move on"], "avatar_intent": {{"expression": "..", "gesture": ".."}}}}
 
 VISUAL TYPES: "equation", "step_list" ({{"steps": []}}), "diagram" (DRAW_NUMBER_LINE, DRAW_COORDINATE_PLANE, DRAW_BOXES_AND_ARROWS: Label1, Label2, Label3, Description), "table", "none".
 

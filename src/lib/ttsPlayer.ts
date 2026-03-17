@@ -179,28 +179,45 @@ function _playWebSpeech(
             return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
+        const speak = (voices: SpeechSynthesisVoice[]) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
 
-        // Pick a female English voice. Try common female voice names across
-        // macOS (Samantha, Karen, Victoria, Moira, Tessa),
-        // Windows (Zira, Hazel), Chrome/Edge (Aria, Jenny, Nova),
-        // then any voice with "female" in the name, then any en-US voice.
+            // Pick a female English voice. Try common female voice names across
+            // macOS (Samantha, Karen, Victoria, Moira, Tessa),
+            // Windows (Zira, Hazel), Chrome/Edge (Aria, Jenny, Nova),
+            // then any voice with "female" in the name, then any en-US voice.
+            const enUS = voices.filter(v => v.lang.toLowerCase().startsWith('en'));
+            const femaleVoice =
+                enUS.find(v => /(samantha|karen|victoria|moira|tessa|zira|hazel|aria|jenny|nova|ava|female)/i.test(v.name)) ??
+                enUS.find(v => v.lang.toLowerCase() === 'en-us') ??
+                enUS[0] ??
+                voices[0];
+            if (femaleVoice) utterance.voice = femaleVoice;
+            utterance.pitch = 1.15;
+            utterance.rate = 0.95;
+
+            utterance.onstart = () => onStart?.();
+            utterance.onend = () => { onEnd?.(); resolve(); };
+            utterance.onerror = () => { onEnd?.(); resolve(); };
+
+            window.speechSynthesis.speak(utterance);
+        };
+
+        // getVoices() is empty on first call in Chrome — wait for voiceschanged
         const voices = window.speechSynthesis.getVoices();
-        const enUS = voices.filter(v => v.lang.toLowerCase().startsWith('en'));
-        const femaleVoice =
-            enUS.find(v => /(samantha|karen|victoria|moira|tessa|zira|hazel|aria|jenny|nova|ava|female)/i.test(v.name)) ??
-            enUS.find(v => v.lang.toLowerCase() === 'en-us') ??
-            enUS[0] ??
-            voices[0];
-        if (femaleVoice) utterance.voice = femaleVoice;
-        utterance.pitch = 1.15;   // nudge pitch up — sounds more feminine on neutral voices
-        utterance.rate = 0.95;
-
-        utterance.onstart = () => onStart?.();
-        utterance.onend = () => { onEnd?.(); resolve(); };
-        utterance.onerror = () => { onEnd?.(); resolve(); };
-
-        window.speechSynthesis.speak(utterance);
+        if (voices.length > 0) {
+            speak(voices);
+        } else {
+            window.speechSynthesis.addEventListener('voiceschanged', () => {
+                speak(window.speechSynthesis.getVoices());
+            }, { once: true });
+            // Safety timeout: if voiceschanged never fires, speak anyway
+            setTimeout(() => {
+                if (window.speechSynthesis.getVoices().length === 0) {
+                    speak([]);
+                }
+            }, 1000);
+        }
     });
 }
